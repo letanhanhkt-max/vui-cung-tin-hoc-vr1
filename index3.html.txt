@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Vui Cùng Tin Học VR - Mô Phỏng Tương Tác 3D Tiểu Học</title>
+  
+  <!-- Nạp A-Frame 1.5.0 chuẩn W3C WebXR -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <style>
+    /* GIAO DIỆN ĐIỀU KHIỂN SƯ PHẠM (HUD UI) */
+    * { box-sizing: border-box; }
+    body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    /* Thanh chọn bài học & Góc nhìn trên cùng */
+    #top-bar {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(18, 30, 49, 0.9);
+      padding: 10px 18px;
+      border-radius: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .hud-btn {
+      background: #0288D1;
+      color: #fff;
+      border: none;
+      padding: 7px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .hud-btn:hover { background: #03A9F4; transform: scale(1.05); }
+    .hud-btn.active { background: #2E7D32; color: #fff; box-shadow: 0 0 8px #4CAF50; }
+    .hud-btn.challenge { background: #E65100; }
+
+    /* Bảng hướng dẫn học tập tiếng Việt ở góc dưới */
+    #instruction-card {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      width: 90%;
+      max-width: 750px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 2px solid #00E5FF;
+      border-radius: 16px;
+      padding: 12px 20px;
+      color: #FFFFFF;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    #lesson-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      color: #00E5FF;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    #guide-text {
+      font-size: 15px;
+      line-height: 1.4;
+      color: #FFF9C4;
+    }
+    #score-badge {
+      display: inline-block;
+      margin-top: 6px;
+      background: #2E7D32;
+      color: white;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+  </style>
+
+  <script>
+    // HỆ THỐNG ĐIỀU KHIỂN SƯ PHẠM VÀ LOGIC BÀI HỌC
+    AFRAME.registerComponent('edu-system', {
+      init: function () {
+        this.currentLesson = 1; // Bài 1: Bật/Tắt | Bài 2: Cổng kết nối
+        this.caseOn = false;
+        this.monitorOn = false;
+        this.isShutdown = false;
+        this.menuOpen = false;
+        this.score = 0;
+
+        // Truy xuất phần tử DOM 3D
+        this.caseBtn = document.querySelector('#case-btn');
+        this.caseLed = document.querySelector('#case-led');
+        this.monitorBtn = document.querySelector('#monitor-btn');
+        this.monitorScreen = document.querySelector('#monitor-screen');
+        this.desktopUI = document.querySelector('#desktop-ui');
+        this.winStartBtn = document.querySelector('#win-start-btn');
+        this.winPowerBtn = document.querySelector('#win-power-btn');
+        this.winMenu = document.querySelector('#win-start-menu');
+
+        // Âm thanh
+        this.sndClick = document.querySelector('#snd-click');
+        this.sndFan = document.querySelector('#snd-fan');
+        this.sndWin = document.querySelector('#snd-win');
+
+        // 1. Thao tác nút nguồn Case
+        this.caseBtn.addEventListener('click', () => {
+          this.sndClick.components.sound.playSound();
+          if (!this.caseOn) {
+            this.caseOn = true;
+            this.caseLed.setAttribute('material', 'color', '#00E676');
+            this.sndFan.components.sound.playSound();
+            this.addScore(25);
+            this.updateDisplay();
+            this.setGuide("✅ Thùng máy đã khởi động! Bước tiếp theo: Em hãy bấm nút nguồn trên Màn hình.");
+          } else {
+            if (!this.isShutdown) {
+              this.setGuide("⚠️ CẢNH BÁO: Tắt đột ngột bằng nút Case sẽ làm hỏng ổ đĩa và mất bài tập! Hãy tắt từ màn hình trước.", "#FF5252");
+            } else {
+              this.caseOn = false;
+              this.caseLed.setAttribute('material', 'color', '#333333');
+              this.sndFan.components.sound.stopSound();
+              this.addScore(25);
+              this.updateDisplay();
+              this.setGuide("🎉 HOÀN THÀNH QUY TRÌNH! Em là một học sinh sử dụng máy tính rất an toàn và đúng cách!", "#69F0AE");
+            }
+          }
+        });
+
+        // 2. Thao tác nút Màn hình
+        this.monitorBtn.addEventListener('click', () => {
+          this.sndClick.components.sound.playSound();
+          this.monitorOn = !this.monitorOn;
+          if (this.monitorOn && this.caseOn) this.addScore(25);
+          this.updateDisplay();
+        });
+
+        // 3. Nhấp biểu tượng Windows Start
+        this.winStartBtn.addEventListener('click', () => {
+          this.sndClick.components.sound.playSound();
+          this.menuOpen = !this.menuOpen;
+          this.winMenu.setAttribute('visible', this.menuOpen);
+        });
+
+        // 4. Nhấp nút Shut Down trên Windows
+        this.winPowerBtn.addEventListener('click', () => {
+          this.sndClick.components.sound.playSound();
+          this.isShutdown = true;
+          this.winMenu.setAttribute('visible', 'false');
+          this.winStartBtn.setAttribute('visible', 'false');
+          this.addScore(25);
+          
+          this.setGuide("🔄 Windows đang lưu dữ liệu và tắt an toàn... Em chờ đèn thùng máy tắt rồi tắt màn hình nhé!", "#FFD54F");
+
+          setTimeout(() => {
+            this.caseOn = false;
+            this.caseLed.setAttribute('material', 'color', '#333333');
+            this.sndFan.components.sound.stopSound();
+            this.updateDisplay();
+            this.setGuide("Thùng máy đã tắt! Cuối cùng, hãy bấm tắt nút nguồn màn hình để tiết kiệm điện.");
+          }, 3000);
+        });
+
+        // 5. Tương tác Bài 2: Cổng kết nối phía sau
+        document.querySelectorAll('.port-item').forEach(port => {
+          port.addEventListener('click', () => {
+            this.sndClick.components.sound.playSound();
+            const name = port.getAttribute('data-name');
+            const desc = port.getAttribute('data-desc');
+            this.setGuide(`🔍 ${name}: ${desc}`, "#80D8FF");
+          });
+        });
+      },
+
+      updateDisplay: function () {
+        if (this.caseOn && this.monitorOn) {
+          this.monitorScreen.setAttribute('material', 'color', '#1565C0');
+          this.desktopUI.setAttribute('visible', 'true');
+          this.winStartBtn.setAttribute('visible', 'true');
+          if (this.score < 50) this.setGuide("Em đã mở máy tính thành công! Hãy quan sát màn hình nền Windows.");
+        } else if (!this.caseOn && this.monitorOn) {
+          this.monitorScreen.setAttribute('material', 'color', '#263238');
+          this.desktopUI.setAttribute('visible', 'false');
+          this.winMenu.setAttribute('visible', 'false');
+          this.setGuide("Màn hình đã bật nhưng Thùng máy chưa bật (Báo No Signal). Em hãy bấm nút trên thùng máy!");
+        } else {
+          this.monitorScreen.setAttribute('material', 'color', '#0a0a0a');
+          this.desktopUI.setAttribute('visible', 'false');
+          this.winMenu.setAttribute('visible', 'false');
+        }
+      },
+
+      addScore: function (pts) {
+        this.score = Math.min(100, this.score + pts);
+        document.querySelector('#score-badge').innerText = `Điểm thực hành: ${this.score}/100`;
+        if (this.score === 100) {
+          this.sndWin.components.sound.playSound();
+        }
+      },
+
+      setGuide: function (msg, color = '#FFF9C4') {
+        const txt = document.querySelector('#guide-text');
+        txt.innerText = msg;
+        txt.style.color = color;
+      }
+    });
+
+    // CHUYỂN GÓC NHÌN CAMERA VÀ BÀI HỌC
+    function switchView(mode) {
+      const rig = document.querySelector('#camera-rig');
+      document.querySelectorAll('.hud-btn').forEach(b => b.classList.remove('active'));
+
+      if (mode === 'overview') {
+        rig.setAttribute('animation', 'property: position; to: 0 1.25 0; dur: 800; easing: easeInOutQuad');
+        document.querySelector('#btn-view-all').classList.add('active');
+        document.querySelector('#lesson-title').innerText = "BÀI HỌC 1: QUY TRÌNH BẬT TẮT MÁY TÍNH";
+      } else if (mode === 'screen') {
+        rig.setAttribute('animation', 'property: position; to: 0.1 1.05 -0.92; dur: 800; easing: easeInOutQuad');
+        document.querySelector('#btn-view-screen').classList.add('active');
+      } else if (mode === 'case') {
+        rig.setAttribute('animation', 'property: position; to: -0.45 1.05 -0.95; dur: 800; easing: easeInOutQuad');
+        document.querySelector('#btn-view-case').classList.add('active');
+      } else if (mode === 'back') {
+        // Góc nhìn mặt sau thùng máy (Bài học 2)
+        rig.setAttribute('animation', 'property: position; to: -0.45 1.05 -2.1; dur: 800; easing: easeInOutQuad');
+        rig.setAttribute('animation__rot', 'property: rotation; to: 0 180 0; dur: 800');
+        document.querySelector('#btn-view-back').classList.add('active');
+        document.querySelector('#lesson-title').innerText = "BÀI HỌC 2: KHÁM PHÁ CÁC CỔNG KẾT NỐI PHÍA SAU";
+        document.querySelector('#guide-text').innerText = "👉 Em hãy nhấp chuột vào các cổng cắm phía sau thùng máy để tìm hiểu công dụng!";
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <!-- THANH ĐIỀU KHIỂN TRÊN CÙNG -->
+  <div id="top-bar">
+    <button id="btn-view-all" class="hud-btn active" onclick="switchView('overview')">👁️ Toàn cảnh</button>
+    <button id="btn-view-case" class="hud-btn" onclick="switchView('case')">🔴 Nút nguồn Case</button>
+    <button id="btn-view-screen" class="hud-btn" onclick="switchView('screen')">🖥️ Cận cảnh Màn hình</button>
+    <button id="btn-view-back" class="hud-btn challenge" onclick="switchView('back')">🔌 Bài 2: Cổng kết nối</button>
+  </div>
+
+  <!-- BẢNG CHỈ DẪN SƯ PHẠM (HUD CARD) -->
+  <div id="instruction-card">
+    <div id="lesson-title">BÀI HỌC 1: QUY TRÌNH BẬT TẮT MÁY TÍNH AN TOÀN</div>
+    <div id="guide-text">👉 Bước 1: Em hãy nhìn vào Nút nguồn màu đỏ trên Thùng máy (Case) và bấm chuột để khởi động máy tính.</div>
+    <div id="score-badge">Điểm thực hành: 0/100</div>
+  </div>
+
+  <!-- KHÔNG GIAN THỰC TẾ ẢO A-FRAME -->
+  <a-scene cursor="rayOrigin: mouse" edu-system background="color: #CFD8DC">
+    
+    <!-- ÂM THANH MÔ PHỎNG -->
+    <a-assets>
+      <audio id="click-audio" src="https://actions.google.com/sounds/v1/switches/switch_toggle.ogg" preload="auto"></audio>
+      <audio id="fan-audio" src="https://actions.google.com/sounds/v1/household/electric_fan_loop.ogg" preload="auto"></audio>
+      <audio id="win-audio" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" preload="auto"></audio>
+    </a-assets>
+
+    <a-entity id="snd-click" sound="src: #click-audio"></a-entity>
+    <a-entity id="snd-fan" sound="src: #fan-audio; loop: true"></a-entity>
+    <a-entity id="snd-win" sound="src: #win-audio"></a-entity>
+
+    <!-- CAMERA RIG HỖ TRỢ ZOOM VÀ TƯƠNG TÁC KÍNH VR -->
+    <a-entity id="camera-rig" position="0 1.25 0">
+      <a-camera look-controls wasd-controls>
+        <a-cursor color="#FF9800" fuse="true" fuse-timeout="1200" raycaster="objects: .clickable"></a-cursor>
+      </a-camera>
+    </a-entity>
+
+    <!-- ÁNH SÁNG PHÒNG HỌC -->
+    <a-entity light="type: ambient; color: #FFF; intensity: 0.85"></a-entity>
+    <a-entity light="type: directional; position: 2 4 2; intensity: 0.6"></a-entity>
+
+    <!-- KHÔNG GIAN PHÒNG MÁY -->
+    <a-plane position="0 0 -1.5" rotation="-90 0 0" width="12" height="12" color="#B0BEC5"></a-plane>
+    <a-plane position="0 2.5 -4" width="12" height="6" color="#ECEFF1"></a-plane>
+
+    <!-- BÀN VI TÍNH -->
+    <a-box position="0 0.7 -1.5" width="1.8" height="0.05" depth="0.9" color="#5D4037"></a-box>
+    <a-cylinder position="-0.8 0.35 -1.2" radius="0.03" height="0.7" color="#3E2723"></a-cylinder>
+    <a-cylinder position="0.8 0.35 -1.2" radius="0.03" height="0.7" color="#3E2723"></a-cylinder>
+
+    <!-- ================= 1. THÙNG MÁY (TOWER CASE) ================= -->
+    <a-box position="-0.5 1.05 -1.5" width="0.24" height="0.52" depth="0.5" color="#263238">
+      
+      <!-- [MẶT TRƯỚC]: Nút nguồn & Đèn LED -->
+      <a-plane position="0 0 0.251" width="0.24" height="0.52" color="#37474F"></a-plane>
+      <a-cylinder id="case-btn" class="clickable" 
+        position="0 0.16 0.255" rotation="90 0 0" 
+        radius="0.028" height="0.02" color="#E53935">
+      </a-cylinder>
+      <a-sphere id="case-led" position="0 0.09 0.255" radius="0.009" color="#333333"></a-sphere>
+
+      <!-- [MẶT SAU]: BÀI HỌC 2 - CÁC CỔNG KẾT NỐI VÀ DÂY CÁP -->
+      <a-plane position="0 0 -0.251" rotation="0 180 0" width="0.24" height="0.52" color="#212121">
+        <!-- Cổng Nguồn Điện -->
+        <a-box class="clickable port-item" data-name="Cổng nguồn điện 220V" data-desc="Nơi cắm dây cấp điện từ ổ cắm vào thùng máy. Tuyệt đối không chạm tay ướt!" 
+          position="0 0.18 0.01" width="0.08" height="0.05" depth="0.01" color="#F44336"></a-box>
+        <!-- Cổng Dây Cáp Màn Hình (HDMI/VGA) -->
+        <a-box class="clickable port-item" data-name="Cổng cáp Màn hình (HDMI/VGA)" data-desc="Truyền hình ảnh từ thùng máy lên màn hình để em quan sát." 
+          position="0 0.05 0.01" width="0.07" height="0.03" depth="0.01" color="#1E88E5"></a-box>
+        <!-- Cổng Cắm Chuột & Bàn Phím (USB) -->
+        <a-box class="clickable port-item" data-name="Cổng USB" data-desc="Dùng để cắm dây nối chuột và bàn phím vào máy tính." 
+          position="0 -0.08 0.01" width="0.06" height="0.04" depth="0.01" color="#FFB300"></a-box>
+      </a-plane>
+    </a-box>
+
+    <!-- ================= 2. MÀN HÌNH (MONITOR) ================= -->
+    <a-box position="0.1 1.08 -1.5" width="0.8" height="0.5" depth="0.04" color="#212121">
+      
+      <!-- Mặt kính màn hình hiển thị -->
