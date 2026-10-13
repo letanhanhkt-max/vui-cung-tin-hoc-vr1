@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>Vui Cùng Tin Học VR - Mô Phỏng Thực Tế Ảo Tiểu Học</title>
+  <title>Vui Cùng Tin Học VR - Tối Ưu Hiệu Năng Cao</title>
   
-  <!-- Nạp A-Frame 1.5.0 chuẩn W3C WebXR -->
+  <!-- Nạp thư viện A-Frame 1.5.0 qua CDN tốc độ cao -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
   <style>
-    /* RESET & KHUNG GIAO DIỆN HỌC TẬP CHUẨN SƯ PHẠM (HUD UI) */
-    * { box-sizing: border-box; user-select: none; }
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    /* TỐI ƯU HÓA GIAO DIỆN HỌC TẬP (ZERO-LATENCY HUD UI) */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; }
 
-    /* Thanh chọn góc nhìn & bài học phía trên */
+    /* Thanh điều hướng góc nhìn trên cùng */
     #top-nav {
       position: absolute;
       top: 12px;
@@ -24,10 +24,10 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 8px;
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.92);
       padding: 8px 16px;
-      border-radius: 40px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      border-radius: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
     .nav-btn {
@@ -39,16 +39,13 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.25s ease;
-      display: flex;
-      align-items: center;
-      gap: 5px;
+      transition: transform 0.2s, background 0.2s;
     }
     .nav-btn:hover { background: #03A9F4; transform: translateY(-2px); }
     .nav-btn.active { background: #2E7D32; box-shadow: 0 0 10px #4CAF50; }
     .nav-btn.alt { background: #E65100; }
 
-    /* Thẻ hướng dẫn học tập tiếng Việt sắc nét phía dưới */
+    /* Thẻ thông tin bài học & hướng dẫn tiếng Việt */
     #instruction-card {
       position: absolute;
       bottom: 16px;
@@ -60,32 +57,32 @@
       background: rgba(15, 23, 42, 0.94);
       border: 2px solid #00E5FF;
       border-radius: 16px;
-      padding: 14px 22px;
+      padding: 12px 20px;
       color: #FFFFFF;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
       text-align: center;
-      backdrop-filter: blur(5px);
+      backdrop-filter: blur(8px);
     }
     #lesson-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: #00E5FF;
       letter-spacing: 1.2px;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     #guide-text {
       font-size: 15px;
       line-height: 1.5;
       font-weight: 500;
       color: #FFF9C4;
-      min-height: 38px;
+      min-height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     #score-bar {
-      margin-top: 8px;
+      margin-top: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -94,7 +91,7 @@
     #score-badge {
       background: #2E7D32;
       color: #FFFFFF;
-      padding: 4px 14px;
+      padding: 3px 14px;
       border-radius: 12px;
       font-size: 13px;
       font-weight: bold;
@@ -113,7 +110,81 @@
   </style>
 
   <script>
-    // COMPONENT LOGIC ĐIỀU KHIỂN HỆ THỐNG VR SƯ PHẠM
+    // BỘ PHÁT ÂM THANH NỘI TẠI (WEB AUDIO API SYNTHESIZER - ZERO NETWORK OVERHEAD)
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.fanOsc = null;
+        this.fanGain = null;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playClick() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.05);
+      }
+      startFan() {
+        this.init();
+        if (this.fanOsc) return;
+        this.fanOsc = this.ctx.createOscillator();
+        this.fanGain = this.ctx.createGain();
+        this.fanOsc.type = 'triangle';
+        this.fanOsc.frequency.setValueAtTime(60, this.ctx.currentTime);
+        this.fanGain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        this.fanOsc.connect(this.fanGain);
+        this.fanGain.connect(this.ctx.destination);
+        this.fanOsc.start();
+      }
+      stopFan() {
+        if (this.fanGain && this.ctx) {
+          this.fanGain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+          setTimeout(() => {
+            if (this.fanOsc) {
+              this.fanOsc.stop();
+              this.fanOsc.disconnect();
+              this.fanOsc = null;
+            }
+          }, 500);
+        }
+      }
+      playVictory() {
+        this.init();
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.12);
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i * 0.12 + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + i * 0.12);
+          osc.stop(this.ctx.currentTime + i * 0.12 + 0.3);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // COMPONENT ĐIỀU KHIỂN HỆ THỐNG VR
     AFRAME.registerComponent('edu-system', {
       init: function () {
         this.caseOn = false;
@@ -122,4 +193,174 @@
         this.menuOpen = false;
         this.score = 0;
 
-        // Truy xuất phần tử DOM
+        this.caseBtn = document.querySelector('#case-btn');
+        this.caseLed = document.querySelector('#case-led');
+        this.monitorBtn = document.querySelector('#monitor-btn');
+        this.monitorScreen = document.querySelector('#monitor-screen');
+        this.desktopUI = document.querySelector('#desktop-ui');
+        this.winStartBtn = document.querySelector('#win-start-btn');
+        this.winPowerBtn = document.querySelector('#win-power-btn');
+        this.winMenu = document.querySelector('#win-start-menu');
+
+        // Bật nút Case
+        this.caseBtn.addEventListener('click', () => {
+          sound.playClick();
+          if (!this.caseOn) {
+            this.caseOn = true;
+            this.caseLed.setAttribute('material', 'color', '#00E676');
+            sound.startFan();
+            this.addScore(25);
+            this.updateDisplay();
+            this.setGuide("✅ Thùng máy đã hoạt động! Bước tiếp theo: Em hãy bấm nút nguồn trên Màn hình.");
+          } else {
+            if (!this.isShutdownOS) {
+              this.setGuide("⚠️ CẢNH BÁO NGUY HIỂM: Tắt đột ngột bằng nút Case sẽ làm hỏng ổ cứng và mất bài tập! Hãy tắt từ Windows trước.", "#FF5252");
+            } else {
+              this.caseOn = false;
+              this.caseLed.setAttribute('material', 'color', '#263238');
+              sound.stopFan();
+              this.addScore(25);
+              this.updateDisplay();
+              this.setGuide("🎉 XUẤT SẮC! Em đã hoàn tất quy trình tắt máy an toàn tuyệt đối.", "#69F0AE");
+            }
+          }
+        });
+
+        // Bật nút Màn hình
+        this.monitorBtn.addEventListener('click', () => {
+          sound.playClick();
+          this.monitorOn = !this.monitorOn;
+          if (this.monitorOn && this.caseOn) this.addScore(25);
+          this.updateDisplay();
+        });
+
+        // Nhấp nút Start Windows trên Desktop
+        this.winStartBtn.addEventListener('click', () => {
+          sound.playClick();
+          this.menuOpen = !this.menuOpen;
+          this.winMenu.setAttribute('visible', this.menuOpen);
+        });
+
+        // Nhấp nút Shut Down trong Start Menu
+        this.winPowerBtn.addEventListener('click', () => {
+          sound.playClick();
+          this.isShutdownOS = true;
+          this.winMenu.setAttribute('visible', 'false');
+          this.winStartBtn.setAttribute('visible', 'false');
+          this.addScore(25);
+          
+          this.setGuide("🔄 Windows đang lưu dữ liệu và tắt an toàn... Em hãy đợi quạt thùng máy tắt hẳn!", "#FFD54F");
+
+          setTimeout(() => {
+            this.caseOn = false;
+            this.caseLed.setAttribute('material', 'color', '#263238');
+            sound.stopFan();
+            this.updateDisplay();
+            this.setGuide("Thùng máy đã tắt! Cuối cùng, hãy bấm tắt nút nguồn màn hình để tiết kiệm điện.");
+          }, 2500);
+        });
+
+        // Tương tác Bài 2: Cổng kết nối
+        document.querySelectorAll('.port-item').forEach(port => {
+          port.addEventListener('click', () => {
+            sound.playClick();
+            const name = port.getAttribute('data-name');
+            const desc = port.getAttribute('data-desc');
+            this.setGuide(`🔍 ${name}: ${desc}`, "#80D8FF");
+          });
+        });
+      },
+
+      updateDisplay: function () {
+        if (this.caseOn && this.monitorOn) {
+          this.monitorScreen.setAttribute('material', 'color', '#1565C0');
+          this.desktopUI.setAttribute('visible', 'true');
+          this.winStartBtn.setAttribute('visible', 'true');
+          if (this.score < 50) this.setGuide("Máy tính đã sẵn sàng hoạt động! Hãy quan sát màn hình nền Windows.");
+        } else if (!this.caseOn && this.monitorOn) {
+          this.monitorScreen.setAttribute('material', 'color', '#263238');
+          this.desktopUI.setAttribute('visible', 'false');
+          this.winMenu.setAttribute('visible', 'false');
+          this.setGuide("Màn hình đã bật nhưng Thùng máy chưa bật (Báo No Signal). Em hãy bấm nút trên Thùng máy!");
+        } else {
+          this.monitorScreen.setAttribute('material', 'color', '#0a0a0a');
+          this.desktopUI.setAttribute('visible', 'false');
+          this.winMenu.setAttribute('visible', 'false');
+        }
+      },
+
+      addScore: function (pts) {
+        this.score = Math.min(100, this.score + pts);
+        document.querySelector('#score-badge').innerText = `Điểm thực hành: ${this.score}/100`;
+        if (this.score === 100) {
+          sound.playVictory();
+        }
+      },
+
+      setGuide: function (msg, color = '#FFF9C4') {
+        const txt = document.querySelector('#guide-text');
+        txt.innerText = msg;
+        txt.style.color = color;
+      },
+
+      resetAll: function () {
+        this.caseOn = false;
+        this.monitorOn = false;
+        this.isShutdownOS = false;
+        this.menuOpen = false;
+        this.score = 0;
+        this.caseLed.setAttribute('material', 'color', '#263238');
+        sound.stopFan();
+        this.updateDisplay();
+        document.querySelector('#score-badge').innerText = `Điểm thực hành: 0/100`;
+        this.setGuide("👉 Bước 1: Em hãy nhìn vào Nút nguồn màu đỏ trên Thùng máy (Case) và bấm chuột.");
+      }
+    });
+
+    // CHUYỂN GÓC NHÌN CAMERA
+    function switchCamera(mode) {
+      const rig = document.querySelector('#camera-rig');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+      if (mode === 'overview') {
+        rig.setAttribute('animation', 'property: position; to: 0 1.25 0; dur: 600; easing: easeInOutQuad');
+        rig.setAttribute('animation__rot', 'property: rotation; to: 0 0 0; dur: 600');
+        document.querySelector('#btn-view-all').classList.add('active');
+        document.querySelector('#lesson-title').innerText = "BÀI HỌC 1: QUY TRÌNH BẬT TẮT MÁY TÍNH AN TOÀN";
+      } else if (mode === 'case') {
+        rig.setAttribute('animation', 'property: position; to: -0.45 1.05 -0.92; dur: 600; easing: easeInOutQuad');
+        rig.setAttribute('animation__rot', 'property: rotation; to: 0 0 0; dur: 600');
+        document.querySelector('#btn-view-case').classList.add('active');
+      } else if (mode === 'screen') {
+        rig.setAttribute('animation', 'property: position; to: 0.1 1.05 -0.90; dur: 600; easing: easeInOutQuad');
+        rig.setAttribute('animation__rot', 'property: rotation; to: 0 0 0; dur: 600');
+        document.querySelector('#btn-view-screen').classList.add('active');
+      } else if (mode === 'back') {
+        rig.setAttribute('animation', 'property: position; to: -0.45 1.05 -2.1; dur: 600; easing: easeInOutQuad');
+        rig.setAttribute('animation__rot', 'property: rotation; to: 0 180 0; dur: 600');
+        document.querySelector('#btn-view-back').classList.add('active');
+        document.querySelector('#lesson-title').innerText = "BÀI HỌC 2: KHÁM PHÁ CÁC CỔNG KẾT NỐI VÀ DÂY CÁP";
+        document.querySelector('#guide-text').innerText = "👉 Em hãy nhấp chuột vào các cổng cắm ở mặt sau thùng máy để tìm hiểu chức năng!";
+      }
+    }
+
+    function doReset() {
+      const scene = document.querySelector('a-scene');
+      scene.components['edu-system'].resetAll();
+      switchCamera('overview');
+    }
+  </script>
+</head>
+
+<body>
+  <!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG -->
+  <div id="top-nav">
+    <button id="btn-view-all" class="nav-btn active" onclick="switchCamera('overview')">👁️ Toàn cảnh</button>
+    <button id="btn-view-case" class="nav-btn" onclick="switchCamera('case')">🔴 Cận cảnh Case</button>
+    <button id="btn-view-screen" class="nav-btn" onclick="switchCamera('screen')">🖥️ Cận cảnh Màn hình</button>
+    <button id="btn-view-back" class="nav-btn alt" onclick="switchCamera('back')">🔌 Bài 2: Cổng kết nối</button>
+  </div>
+
+  <!-- THẺ HƯỚNG DẪN HỌC TẬP -->
+  <div id="instruction-card">
+    <div id="lesson-
