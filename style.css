@@ -1,20 +1,18 @@
 /* ==========================================================================
-   THIẾT KẾ UX/UI DÀNH RIÊNG CHO HỌC SINH LỚP 3
-   Màu sắc tươi sáng, chữ lớn dễ đọc, bo góc mềm mại, không quảng cáo/xao nhãng
+   GIAO DIỆN UX/UI TƯƠI SÁNG, DỊU MẮT, THÂN THIỆN VỚI HỌC SINH TIỂU HỌC
+   Mô phỏng chuẩn giao diện Windows 11 (Bo góc, hiệu ứng kính mờ, trực quan)
    ========================================================================== */
 
 :root {
   --primary: #0288D1;
   --primary-hover: #039BE5;
   --success: #2E7D32;
-  --success-light: #E8F5E9;
   --warning: #F57C00;
   --danger: #D32F2F;
-  --bg-soft: #F0F7FF;
   --text-dark: #1E293B;
   --radius-lg: 22px;
   --radius-md: 14px;
-  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.15);
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.16);
 }
 
 * {
@@ -44,7 +42,7 @@ body, html {
   position: fixed;
   inset: 0;
   z-index: 100000;
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -61,11 +59,11 @@ body, html {
   text-align: center;
   box-shadow: var(--shadow-soft);
   border: 4px solid #81D4FA;
-  animation: popIn 0.35s ease-out;
+  animation: popIn 0.3s ease-out;
 }
 
 @keyframes popIn {
-  from { transform: scale(0.92); opacity: 0; }
+  from { transform: scale(0.94); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
@@ -97,14 +95,23 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
   margin: 14px 0;
   background: #F8FAFC;
   padding: 14px;
   border-radius: var(--radius-md);
 }
 
-.illus-icon { font-size: 40px; }
+.illus-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.illus-icon { font-size: 38px; }
 .illus-arrow { font-size: 24px; color: #94A3B8; font-weight: bold; }
 
 .welcome-desc {
@@ -122,8 +129,8 @@ body, html {
   background: linear-gradient(135deg, #2E7D32, #43A047);
   color: white;
   border: none;
-  padding: 16px 36px;
-  font-size: 21px;
+  padding: 16px 38px;
+  font-size: 20px;
   font-weight: 800;
   border-radius: 40px;
   cursor: pointer;
@@ -136,11 +143,11 @@ body, html {
   box-shadow: 0 8px 22px rgba(46, 125, 50, 0.5);
 }
 
-.welcome-Quick-bar {
+.welcome-quick-bar {
   margin-top: 20px;
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
@@ -148,32 +155,30 @@ body, html {
   background: #F1F5F9;
   color: #334155;
   border: 2px solid #CBD5E1;
-  padding: 9px 18px;
+  padding: 8px 16px;
   border-radius: 25px;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.2s;
 }
 
-.btn-pill:hover {
-  background: #E2E8F0;
-}
+.btn-pill:hover { background: #E2E8F0; }
 
 /* ==========================================================================
    2. THANH ĐIỀU HƯỚNG TRÊN CÙNG (TOP HUD)
    ========================================================================== */
 #top-hud {
   position: fixed;
-  top: 12px;
-  left: 16px;
-  right: 16px;
+  top: 10px;
+  left: 14px;
+  right: 14px;
   z-index: 9000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.94);
-  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 18px;
   border-radius: 40px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   border: 2px solid #B3E5FC;
@@ -190,7 +195,7 @@ body, html {
 .logo-chip {
   font-weight: 800;
   color: #0277BD;
-  font-size: 16px;
+  font-size: 15.5px;
 }
 
 .phase-badge {
@@ -198,14 +203,14 @@ body, html {
   color: #2E7D32;
   padding: 5px 14px;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
 }
 
 .btn-cam {
   background: #E1F5FE;
   color: #0277BD;
-  border: 2px solid transparent;
+  border: none;
   padding: 8px 16px;
   border-radius: 22px;
   font-size: 14px;
@@ -238,7 +243,7 @@ body, html {
   padding: 7px 14px;
   border-radius: 20px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13.5px;
   cursor: pointer;
 }
 
@@ -247,19 +252,19 @@ body, html {
    ========================================================================== */
 #bottom-hud {
   position: fixed;
-  bottom: 14px;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9000;
   width: 94%;
-  max-width: 880px;
+  max-width: 820px;
 }
 
 .guide-box {
   background: rgba(255, 255, 255, 0.96);
   border: 3px solid #4FC3F7;
   border-radius: 22px;
-  padding: 16px 24px;
+  padding: 14px 22px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.16);
   text-align: center;
 }
@@ -269,13 +274,13 @@ body, html {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .activity-tag {
   background: #FF9800;
   color: white;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 800;
   padding: 4px 12px;
   border-radius: 14px;
@@ -283,35 +288,36 @@ body, html {
 
 #guide-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 19px;
   color: #01579B;
 }
 
 #guide-message {
-  margin: 6px 0 12px 0;
-  font-size: 17px;
+  margin: 6px 0 10px 0;
+  font-size: 16.5px;
   color: #334155;
   line-height: 1.45;
 }
 
-/* Thẻ 3 bước bật máy */
+/* Thẻ 2 bước bật máy */
 .step-cards-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 10px 0 12px 0;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 8px 0 12px 0;
 }
 
 .mini-step-card {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   background: #F8FAFC;
   border: 2px solid #E2E8F0;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border-radius: 14px;
   text-align: left;
   opacity: 0.65;
+  cursor: pointer;
   transition: 0.25s;
 }
 
@@ -331,8 +337,8 @@ body, html {
 .step-num {
   background: #0288D1;
   color: white;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -342,7 +348,7 @@ body, html {
   flex-shrink: 0;
 }
 
-.step-text strong { display: block; font-size: 14px; color: #0F172A; }
+.step-text strong { display: block; font-size: 14.5px; color: #0F172A; }
 .step-text span { font-size: 13px; color: #475569; }
 
 .action-row {
@@ -356,9 +362,9 @@ body, html {
   background: #0288D1;
   color: white;
   border: none;
-  padding: 11px 24px;
+  padding: 10px 24px;
   border-radius: 25px;
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 800;
   cursor: pointer;
   transition: 0.2s;
@@ -377,11 +383,11 @@ body, html {
 }
 
 /* ==========================================================================
-   4. MÔ PHỎNG MÀN HÌNH WINDOWS 11 TƯƠNG TÁC
+   4. MÔ PHỎNG MÀN HÌNH WINDOWS 11 CHUẨN HIỆN ĐẠI
    ========================================================================== */
 .win11-overlay {
   position: fixed;
-  inset: 68px 20px 16px 20px;
+  inset: 64px 18px 14px 18px;
   z-index: 9500;
   display: flex;
   align-items: center;
@@ -390,12 +396,12 @@ body, html {
 
 .monitor-bezel {
   width: 100%;
-  max-width: 1020px;
+  max-width: 1040px;
   height: 100%;
-  max-height: 620px;
+  max-height: 640px;
   background: #1E293B;
   border-radius: 20px;
-  padding: 12px 14px 4px 14px;
+  padding: 10px 14px 4px 14px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
@@ -421,7 +427,7 @@ body, html {
 .mode-pill {
   background: #38BDF8;
   color: #0F172A;
-  padding: 3px 12px;
+  padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 800;
@@ -438,16 +444,15 @@ body, html {
   font-size: 13px;
 }
 
-/* Màn hình Desktop Windows 11 */
+/* Màn hình nền Windows 11 Bloom Style */
 .win11-desktop {
   flex: 1;
-  background: linear-gradient(135deg, #38BDF8 0%, #0284C7 55%, #1E3A8A 100%);
-  border-radius: 10px;
+  background: radial-gradient(circle at 50% 45%, #60A5FA 0%, #2563EB 45%, #1E3A8A 100%);
+  border-radius: 12px;
   position: relative;
   overflow: hidden;
 }
 
-/* Banner hướng dẫn trong màn hình */
 .win11-banner {
   position: absolute;
   top: 12px;
@@ -467,7 +472,7 @@ body, html {
 
 .banner-icon { font-size: 28px; }
 .banner-content { flex: 1; text-align: left; }
-.banner-content strong { display: block; font-size: 16px; color: #B45309; }
+.banner-content strong { display: block; font-size: 15.5px; color: #B45309; }
 .banner-content span { font-size: 14.5px; color: #1E293B; }
 
 .btn-small-guide {
@@ -480,42 +485,42 @@ body, html {
   cursor: pointer;
 }
 
-/* Icons trên Desktop */
+/* Biểu tượng ngoài Desktop */
 .desktop-icons {
   position: absolute;
-  top: 90px;
-  left: 18px;
+  top: 88px;
+  left: 16px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .d-icon {
-  width: 86px;
+  width: 88px;
   text-align: center;
   color: white;
   cursor: pointer;
   padding: 6px;
   border-radius: 10px;
 }
-.d-icon:hover { background: rgba(255,255,255,0.2); }
+.d-icon:hover { background: rgba(255,255,255,0.18); }
 .d-icon-img { font-size: 34px; margin-bottom: 4px; }
 .d-icon span { font-size: 12.5px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 
-/* Cửa sổ phần mềm (Trình duyệt & Rapid) */
+/* Cửa sổ ứng dụng Windows 11 */
 .app-window {
   position: absolute;
   width: 390px;
   background: #FFFFFF;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
   overflow: visible;
   border: 2px solid #CBD5E1;
   z-index: 15;
 }
 
 #win-app-browser { top: 92px; left: 125px; }
-#win-app-rapid { top: 135px; right: 45px; }
+#win-app-rapid { top: 130px; right: 45px; }
 
 .window-titlebar {
   display: flex;
@@ -528,8 +533,8 @@ body, html {
   font-size: 14px;
 }
 
-.browser-bar { background: #0288D1; }
-.rapid-bar { background: #7B1FA2; }
+.browser-bar { background: #0284C7; }
+.rapid-bar { background: #7C3AED; }
 
 .win-actions {
   display: flex;
@@ -537,7 +542,7 @@ body, html {
 }
 
 .win-btn {
-  width: 30px;
+  width: 32px;
   height: 28px;
   border: none;
   border-radius: 6px;
@@ -549,22 +554,20 @@ body, html {
   position: relative;
 }
 
-.win-btn.close-x {
-  background: #E53935;
-}
+.win-btn.close-x { background: #E53935; }
 .win-btn.close-x:hover {
   background: #B71C1C;
   transform: scale(1.1);
 }
 
-/* Nhãn mũi tên chỉ dẫn nổi bật */
+/* Mũi tên chỉ dẫn nổi bật */
 .guide-arrow-badge {
   position: absolute;
-  left: 36px;
+  left: 38px;
   top: 2px;
   background: #FFEA00;
   color: #D50000;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 900;
@@ -639,34 +642,46 @@ body, html {
   border-bottom: 3px solid #F57C00;
 }
 
-/* Menu Start Windows 11 */
+/* Menu Start Windows 11 (Nổi ở trung tâm chuẩn thiết kế Win 11) */
 .start-menu {
   position: absolute;
-  bottom: 56px;
-  left: 16px;
-  width: 320px;
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(12px);
+  bottom: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
   border-radius: 16px;
-  box-shadow: 0 10px 35px rgba(0,0,0,0.35);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
   padding: 16px;
   z-index: 40;
-  border: 2px solid #90CAF9;
+  border: 2px solid #BAE6FD;
+}
+
+.start-search-bar {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  color: #64748B;
+  text-align: left;
+  margin-bottom: 12px;
 }
 
 .start-header {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 800;
   color: #475569;
   text-align: left;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .start-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .s-item {
@@ -677,12 +692,14 @@ body, html {
   padding: 8px;
   background: #F8FAFC;
   border-radius: 10px;
+  cursor: pointer;
 }
-.s-item span { font-size: 11px; margin-top: 4px; color: #334155; font-weight: 700; }
+.s-item:hover { background: #E0F2FE; }
+.s-item span { font-size: 11.5px; margin-top: 4px; color: #334155; font-weight: 700; }
 
 .start-footer {
   border-top: 1px solid #E2E8F0;
-  padding-top: 12px;
+  padding-top: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -693,7 +710,7 @@ body, html {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .power-wrapper { position: relative; }
@@ -703,21 +720,24 @@ body, html {
   height: 42px;
   border-radius: 50%;
   border: 2px solid #CBD5E1;
-  background: #FFF;
-  font-size: 20px;
+  background: #FFFFFF;
+  color: #1E293B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   position: relative;
 }
-.power-btn:hover { background: #FFEBEE; border-color: #E53935; }
+.power-btn:hover { background: #FFEBEE; border-color: #E53935; color: #D32F2F; }
 
 .power-popup {
   position: absolute;
   bottom: 50px;
   right: 0;
-  width: 160px;
+  width: 165px;
   background: #FFFFFF;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
   padding: 6px;
   border: 2px solid #90CAF9;
   display: flex;
@@ -739,11 +759,12 @@ body, html {
 .power-opt:hover { background: #E3F2FD; }
 .shutdown-highlight { background: #FFEBEE; color: #C62828; }
 
-/* Nhãn mũi tên chỉ dẫn Bước 1, 2, 3 tắt máy */
+/* Nhãn mũi tên chỉ dẫn Bước 1, 2, 3 */
 .guide-arrow-up {
   position: absolute;
   bottom: 50px;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   background: #FFEA00;
   color: #D50000;
   padding: 4px 10px;
@@ -756,7 +777,7 @@ body, html {
 
 .guide-arrow-left {
   position: absolute;
-  right: 165px;
+  right: 170px;
   top: 6px;
   background: #FFEA00;
   color: #D50000;
@@ -768,23 +789,24 @@ body, html {
   box-shadow: 0 3px 10px rgba(0,0,0,0.3);
 }
 
-/* Thanh Taskbar Windows 11 */
+/* Thanh Taskbar Windows 11 (Căn giữa hiện đại) */
 .win11-taskbar {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 48px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
+  background: rgba(248, 250, 252, 0.92);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 0 16px;
   z-index: 35;
+  border-top: 1px solid rgba(255,255,255,0.5);
 }
 
-.taskbar-left-hint {
+.taskbar-main-group {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -813,7 +835,7 @@ body, html {
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  background: rgba(0,0,0,0.06);
+  background: rgba(0,0,0,0.05);
   cursor: pointer;
 }
 .tb-app-icon.active {
@@ -822,11 +844,14 @@ body, html {
 }
 
 .taskbar-systray {
+  position: absolute;
+  right: 16px;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
+  color: #334155;
 }
 
 /* Màn hình Shutting down */
@@ -987,15 +1012,15 @@ body, html {
 /* Toast phản hồi */
 .feedback-toast {
   position: fixed;
-  top: 76px;
+  top: 72px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100001;
   background: #1E293B;
   color: white;
-  padding: 12px 24px;
+  padding: 11px 24px;
   border-radius: 30px;
-  font-size: 17px;
+  font-size: 16.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1023,5 +1048,5 @@ body, html {
   .step-cards-row, .visual-steps-grid, .stats-grid {
     grid-template-columns: 1fr;
   }
-  .app-window { width: 90%; left: 5% !important; right: auto !important; }
+  .app-window { width: 92%; left: 4% !important; right: auto !important; }
 }
