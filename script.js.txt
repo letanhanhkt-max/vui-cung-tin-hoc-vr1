@@ -1,0 +1,767 @@
+/**
+ * ============================================================================
+ * HỆ THỐNG ĐIỀU KHIỂN PHÒNG HỌC TIN HỌC ẢO 360° - LỚP 3
+ * Bài 4: Làm việc với máy tính (Bật và tắt máy tính đúng cách trong Windows 11)
+ * Thiết kế theo nguyên lý Sư phạm: Quan sát -> Hướng dẫn -> Thực hành -> Tự thực hành
+ * ============================================================================
+ */
+
+class SoundSystem {
+  constructor() {
+    this.enabled = true;
+    this.ctx = null;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  // Âm thanh "Ting" vui tươi khi học sinh làm đúng
+  playTing() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, now); // D5
+    osc.frequency.setValueAtTime(880, now + 0.09); // A5
+    gain.gain.setValueAtTime(0.22, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.38);
+  }
+
+  // Âm thanh nhắc nhở nhẹ nhàng khi thao tác chưa đúng
+  playHintTone() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(340, now);
+    osc.frequency.linearRampToValueAtTime(280, now + 0.22);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
+
+  // Âm thanh khởi động Windows 11 dịu nhẹ phát ra từ loa
+  playStartupChime() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const chords = [261.63, 329.63, 392.00, 523.25];
+    chords.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      const start = this.ctx.currentTime + idx * 0.12;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.16, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.7);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.7);
+    });
+  }
+
+  // Đọc giọng nói tiếng Việt hỗ trợ học sinh lớp 3
+  speak(text) {
+    if (!this.enabled || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'vi-VN';
+    utter.rate = 0.95;
+    window.speechSynthesis.speak(utter);
+  }
+}
+
+const SFX = new SoundSystem();
+
+const App = {
+  // Trạng thái bài học:
+  // 'explore' | 'act1_poweron' | 'act2_shutdown_guided' | 'act3_free_practice' | 'completed'
+  mode: 'explore',
+  isFreePractice: false,
+
+  // Trạng thái phần cứng & phần mềm
+  hwSwitchOn: false,
+  cpuPowerOn: false,
+  monitorPowerOn: false,
+  cpuShuttingDownComplete: false,
+
+  browserOpen: true,
+  rapidOpen: true,
+  startMenuOpen: false,
+  powerPopupOpen: false,
+
+  // Thống kê học tập
+  correctSteps: 0,
+  hintsCount: 0,
+  startTime: null,
+
+  init() {
+    this.bind3DEvents();
+    this.loadSavedProgress();
+  },
+
+  bind3DEvents() {
+    const sw3d = document.getElementById('power-switch-3d');
+    const cpuBtn = document.getElementById('cpu-btn-3d');
+    const monBtn = document.getElementById('monitor-btn-3d');
+    const monScreen = document.getElementById('monitor-screen-3d');
+    const kb3d = document.getElementById('keyboard-3d');
+    const mouse3d = document.getElementById('mouse-3d');
+
+    if (sw3d) sw3d.addEventListener('click', () => this.clickPowerSwitch());
+    if (cpuBtn) cpuBtn.addEventListener('click', () => this.clickCpuPower());
+    if (monBtn) monBtn.addEventListener('click', () => this.clickMonitorPower());
+    if (monScreen) {
+      monScreen.addEventListener('click', () => {
+        if (this.cpuPowerOn && this.monitorPowerOn) {
+          this.openWindows11Screen();
+        } else {
+          this.startActivity1();
+        }
+      });
+    }
+    if (kb3d) {
+      kb3d.addEventListener('click', () => {
+        this.showToast('💡', 'Đây là Bàn phím dùng để gõ chữ. Hãy tìm nút nguồn để bật/tắt máy nhé!');
+      });
+    }
+    if (mouse3d) {
+      mouse3d.addEventListener('click', () => {
+        this.showToast('💡', 'Đây là Chuột máy tính giúp em điều khiển con trỏ trên màn hình.');
+      });
+    }
+  },
+
+  // ==========================================================================
+  // KHỞI ĐẦU & ĐIỀU HƯỚNG CAMERA VR
+  // ==========================================================================
+  startExploration() {
+    SFX.init();
+    document.getElementById('start-screen').classList.add('hidden');
+    this.startTime = Date.now();
+    this.moveCamera('desk');
+    this.startActivity1();
+  },
+
+  moveCamera(target) {
+    const rig = document.getElementById('camera-rig');
+    document.querySelectorAll('.btn-cam').forEach(b => b.classList.remove('active'));
+
+    if (target === 'room') {
+      rig.setAttribute('animation', 'property: position; to: 0 1.45 1.1; dur: 900; easing: easeInOutQuad');
+      document.getElementById('cam-room').classList.add('active');
+    } else if (target === 'desk') {
+      rig.setAttribute('animation', 'property: position; to: 0 1.26 -0.22; dur: 900; easing: easeInOutQuad');
+      document.getElementById('cam-desk').classList.add('active');
+    } else if (target === 'monitor') {
+      rig.setAttribute('animation', 'property: position; to: 0.08 1.12 -0.68; dur: 800; easing: easeInOutQuad');
+      document.getElementById('cam-monitor').classList.add('active');
+    }
+  },
+
+  // ==========================================================================
+  // HOẠT ĐỘNG 1: BẬT MÁY TÍNH ĐÚNG CÁCH (3 BƯỚC)
+  // ==========================================================================
+  startActivity1() {
+    this.mode = 'act1_poweron';
+    this.isFreePractice = false;
+    this.resetHardwareOff();
+
+    this.moveCamera('desk');
+    document.getElementById('phase-indicator').innerText = 'Hoạt động 1: Bật máy tính';
+    document.getElementById('activity-tag').innerText = 'HOẠT ĐỘNG 1';
+    document.getElementById('guide-title').innerText = 'BẬT MÁY TÍNH ĐÚNG CÁCH';
+    document.getElementById('guide-message').innerHTML =
+      '👉 <b>Bước 1:</b> Em hãy nháy chuột vào <b>Công tắc nguồn điện</b> (màu cam ở bên trái bàn) để cấp điện cho máy tính.';
+
+    document.getElementById('power-on-steps').classList.remove('hidden');
+    document.getElementById('btn-act-poweron').classList.add('hidden');
+    document.getElementById('btn-act-win11').classList.add('hidden');
+    document.getElementById('btn-act-shutdown').classList.add('hidden');
+
+    this.updateStepCards(1);
+    this.set3DHighlights({ sw: true, cpu: false, mon: false });
+    SFX.speak('Hoạt động 1: Bật máy tính đúng cách. Bước 1: Em hãy bật công tắc nguồn của máy tính.');
+  },
+
+  // Thao tác Bước 1: Bật công tắc nguồn điện
+  clickPowerSwitch() {
+    if (this.mode !== 'act1_poweron') {
+      this.showToast('💡', 'Công tắc nguồn điện đang hoạt động bình thường.');
+      return;
+    }
+
+    if (!this.hwSwitchOn) {
+      this.hwSwitchOn = true;
+      document.getElementById('power-switch-3d').setAttribute('color', '#00E676');
+      this.correctSteps++;
+      SFX.playTing();
+      this.showToast('✅', 'Chính xác! Bước 1 hoàn thành: Đã bật công tắc nguồn.');
+
+      this.updateStepCards(2);
+      this.set3DHighlights({ sw: false, cpu: true, mon: false });
+      document.getElementById('guide-message').innerHTML =
+        '👉 <b>Bước 2:</b> Em hãy nhấn <b>nút nguồn màu đỏ trên thân máy (CPU)</b> nhé!';
+      SFX.speak('Bước 2: Nhấn nút nguồn trên thân máy.');
+      this.updateTeacherStats();
+    }
+  },
+
+  // Thao tác Bước 2: Nhấn nút nguồn trên thân máy (CPU)
+  clickCpuPower() {
+    if (this.mode === 'act1_poweron') {
+      if (!this.hwSwitchOn) {
+        this.hintsCount++;
+        SFX.playHintTone();
+        this.showToast('💡', 'Hãy bật công tắc nguồn điện (Bước 1) ở bên trái bàn trước nhé!');
+        this.updateTeacherStats();
+        return;
+      }
+
+      if (!this.cpuPowerOn) {
+        this.cpuPowerOn = true;
+        document.getElementById('cpu-btn-3d').setAttribute('color', '#00E676');
+        document.getElementById('cpu-led-3d').setAttribute('color', '#00E676');
+        this.correctSteps++;
+        SFX.playTing();
+        this.showToast('✅', 'Em làm rất tốt! Thân máy (CPU) đã có đèn báo sáng.');
+
+        this.updateStepCards(3);
+        this.set3DHighlights({ sw: false, cpu: false, mon: true });
+        document.getElementById('guide-message').innerHTML =
+          '👉 <b>Bước 3:</b> Em hãy nhấn <b>nút nguồn ở góc dưới bên phải màn hình</b> để màn hình sáng lên.';
+        SFX.speak('Bước 3: Nhấn nút nguồn của màn hình.');
+        this.updateTeacherStats();
+      }
+      return;
+    }
+
+    // Nếu đang ở Hoạt động 2 hoặc Thực hành tự do mà bấm nút nguồn CPU để tắt đột ngột
+    if (this.cpuPowerOn && !this.cpuShuttingDownComplete) {
+      this.hintsCount++;
+      SFX.playHintTone();
+      this.showToast('💡', 'Không nên nhấn nút nguồn trên thân máy để tắt! Hãy tắt bằng lệnh Shut down trên màn hình.');
+      this.updateTeacherStats();
+    }
+  },
+
+  // Thao tác Bước 3 (Bật màn hình) HOẶC Bước cuối cùng (Tắt màn hình sau khi CPU tắt)
+  clickMonitorPower() {
+    // Trường hợp 1: Đang ở Hoạt động 1 (Bật máy tính)
+    if (this.mode === 'act1_poweron') {
+      if (!this.hwSwitchOn) {
+        this.hintsCount++;
+        SFX.playHintTone();
+        this.showToast('💡', 'Hãy bật công tắc nguồn của máy tính trước nhé!');
+        return;
+      }
+      if (!this.cpuPowerOn) {
+        this.hintsCount++;
+        SFX.playHintTone();
+        this.showToast('💡', 'Hãy tìm nút nguồn trên thân máy tính (CPU) và nhấn trước nhé!');
+        return;
+      }
+
+      if (!this.monitorPowerOn) {
+        this.monitorPowerOn = true;
+        document.getElementById('monitor-btn-3d').setAttribute('color', '#00E676');
+        document.getElementById('monitor-led-3d').setAttribute('color', '#00E676');
+        document.getElementById('screen-3d-content').setAttribute('visible', 'true');
+        this.correctSteps++;
+
+        SFX.playStartupChime();
+        this.updateStepCards(4); // Hoàn tất cả 3 bước
+        this.set3DHighlights({ sw: false, cpu: false, mon: false });
+
+        this.showToast('✅', 'Em đã bật máy tính đúng cách!');
+        document.getElementById('guide-title').innerText = '✅ EM ĐÃ BẬT MÁY TÍNH ĐÚNG CÁCH!';
+        document.getElementById('guide-message').innerHTML =
+          'Màn hình đã sáng lên, thân máy có đèn báo xanh và loa phát âm thanh khởi động. Hãy nhấn nút <b>"🛑 Hoạt động 2: Tắt máy tính đúng cách"</b> để tiếp tục!';
+
+        document.getElementById('btn-act-win11').classList.remove('hidden');
+        document.getElementById('btn-act-shutdown').classList.remove('hidden');
+        document.getElementById('btn-act-shutdown').classList.add('highlight-pulse');
+
+        SFX.speak('Chúc mừng! Em đã bật máy tính đúng cách.');
+        this.updateTeacherStats();
+      }
+      return;
+    }
+
+    // Trường hợp 2: Đang ở bước cuối cùng của Tắt máy tính (Sau khi CPU đã tắt đèn)
+    if (this.mode === 'act2_shutdown_guided' || this.mode === 'act3_free_practice') {
+      if (!this.cpuShuttingDownComplete) {
+        this.hintsCount++;
+        SFX.playHintTone();
+        this.showToast('💡', 'Hãy đóng các chương trình và chọn Start → Power → Shut down trước khi tắt màn hình nhé!');
+        this.updateTeacherStats();
+        return;
+      }
+
+      // Đã tắt CPU xong -> Tắt màn hình thành công!
+      this.monitorPowerOn = false;
+      document.getElementById('monitor-btn-3d').setAttribute('color', '#546E7A');
+      document.getElementById('monitor-led-3d').setAttribute('color', '#37474F');
+      document.getElementById('screen-3d-content').setAttribute('visible', 'false');
+      this.set3DHighlights({ sw: false, cpu: false, mon: false });
+      this.correctSteps++;
+      SFX.playTing();
+
+      if (this.mode === 'act2_shutdown_guided') {
+        this.showToast('🎉', 'Chính xác! Em đã hoàn thành 4 bước tắt máy tính có hướng dẫn.');
+        document.getElementById('guide-title').innerText = '🌟 HOÀN THÀNH HƯỚNG DẪN TẮT MÁY!';
+        document.getElementById('guide-message').innerHTML =
+          'Em giỏi lắm! Bây giờ hãy thử sức với phần <b>"🎮 Chế độ: Em tự thực hành"</b> (không có mũi tên gợi ý) để nhận Huy hiệu nhé!';
+        document.getElementById('btn-act-practice').classList.remove('hidden');
+        document.getElementById('btn-act-practice').classList.add('highlight-pulse');
+        SFX.speak('Em đã tắt máy tính đúng cách! Bây giờ hãy bấm sang chế độ Em tự thực hành nhé.');
+      } else {
+        // Hoàn thành chế độ Tự thực hành -> Mở bảng tổng kết & trao huy hiệu!
+        this.finishLesson();
+      }
+      this.updateTeacherStats();
+    }
+  },
+
+  // ==========================================================================
+  // HOẠT ĐỘNG 2: TẮT MÁY TÍNH ĐÚNG CÁCH (CÓ HƯỚNG DẪN)
+  // ==========================================================================
+  startActivity2() {
+    this.mode = 'act2_shutdown_guided';
+    this.isFreePractice = false;
+    this.prepareWindows11State();
+
+    document.getElementById('phase-indicator').innerText = 'Hoạt động 2: Tắt máy tính';
+    document.getElementById('activity-tag').innerText = 'HOẠT ĐỘNG 2';
+    document.getElementById('power-on-steps').classList.add('hidden');
+    document.getElementById('btn-act-shutdown').classList.add('hidden');
+    document.getElementById('mode-pill-win').innerText = 'Chế độ có hướng dẫn';
+
+    // Hiển thị các mũi tên gợi ý đóng ứng dụng
+    document.getElementById('arrow-close-browser').classList.remove('hidden');
+    document.getElementById('arrow-close-rapid').classList.remove('hidden');
+
+    this.moveCamera('monitor');
+    this.openWindows11Screen();
+
+    document.getElementById('win11-banner-title').innerText = '❓ TRƯỚC KHI TẮT MÁY, EM CẦN LÀM GÌ?';
+    document.getElementById('win11-banner-desc').innerHTML =
+      'Trên màn hình đang mở <b>Trình duyệt Web</b> và <b>Rapid</b>. Em hãy tìm nút <b>✕</b> ở góc trên bên phải từng cửa sổ để đóng lại nhé!';
+
+    SFX.speak('Trước khi tắt máy, em cần làm gì? Hãy đóng hai chương trình đang mở trên màn hình.');
+  },
+
+  // ==========================================================================
+  // HOẠT ĐỘNG 3: CHẾ ĐỘ THỰC HÀNH TỰ DO (MỤC 9 - KHÔNG HIỆN MŨI TÊN)
+  // ==========================================================================
+  startFreePractice() {
+    this.closeAllModals();
+    this.mode = 'act3_free_practice';
+    this.isFreePractice = true;
+    this.prepareWindows11State();
+
+    document.getElementById('phase-indicator').innerText = '🎮 Em tự thực hành';
+    document.getElementById('activity-tag').innerText = 'TỰ THỰC HÀNH';
+    document.getElementById('power-on-steps').classList.add('hidden');
+    document.getElementById('btn-act-practice').classList.add('hidden');
+    document.getElementById('mode-pill-win').innerText = '🎮 EM TỰ THỰC HÀNH';
+
+    // Ẩn toàn bộ mũi tên chỉ dẫn để học sinh tự nhớ quy trình 7 thao tác
+    document.getElementById('arrow-close-browser').classList.add('hidden');
+    document.getElementById('arrow-close-rapid').classList.add('hidden');
+    document.getElementById('arrow-start-btn').classList.add('hidden');
+    document.getElementById('arrow-power-btn').classList.add('hidden');
+    document.getElementById('arrow-shutdown-btn').classList.add('hidden');
+    document.getElementById('btn-show-4steps').classList.add('hidden');
+
+    this.moveCamera('monitor');
+    this.openWindows11Screen();
+
+    document.getElementById('win11-banner-title').innerText = '🎮 CHẾ ĐỘ: EM TỰ THỰC HÀNH TẮT MÁY TÍNH';
+    document.getElementById('win11-banner-desc').innerHTML =
+      'Không còn mũi tên gợi ý sẵn! Em hãy tự thực hiện lần lượt: <b>Đóng 2 phần mềm ➔ Start ➔ Power ➔ Shut down ➔ Tắt màn hình</b>.';
+
+    SFX.speak('Chế độ Em tự thực hành bắt đầu. Em hãy tự thực hiện các bước để tắt máy tính đúng cách nhé.');
+    this.updateTeacherStats();
+  },
+
+  prepareWindows11State() {
+    this.hwSwitchOn = true;
+    this.cpuPowerOn = true;
+    this.monitorPowerOn = true;
+    this.cpuShuttingDownComplete = false;
+
+    this.browserOpen = true;
+    this.rapidOpen = true;
+    this.startMenuOpen = false;
+    this.powerPopupOpen = false;
+
+    document.getElementById('power-switch-3d').setAttribute('color', '#00E676');
+    document.getElementById('cpu-btn-3d').setAttribute('color', '#00E676');
+    document.getElementById('cpu-led-3d').setAttribute('color', '#00E676');
+    document.getElementById('monitor-btn-3d').setAttribute('color', '#00E676');
+    document.getElementById('monitor-led-3d').setAttribute('color', '#00E676');
+    document.getElementById('screen-3d-content').setAttribute('visible', 'true');
+    document.getElementById('mini-win-1').setAttribute('visible', 'true');
+    document.getElementById('mini-win-2').setAttribute('visible', 'true');
+
+    document.getElementById('win-app-browser').classList.remove('hidden');
+    document.getElementById('win-app-rapid').classList.remove('hidden');
+    document.getElementById('tb-icon-browser').classList.add('active');
+    document.getElementById('tb-icon-rapid').classList.add('active');
+    document.getElementById('win11-start-menu').classList.add('hidden');
+    document.getElementById('power-popup-menu').classList.add('hidden');
+    document.getElementById('win11-shutting-down').classList.add('hidden');
+  },
+
+  // ==========================================================================
+  // XỬ LÝ TƯƠNG TÁC TRÊN WINDOWS 11 (MỤC 4, 6, 7, 8)
+  // ==========================================================================
+  openWindows11Screen() {
+    document.getElementById('win11-workspace').classList.remove('hidden');
+  },
+
+  closeWindows11Screen() {
+    document.getElementById('win11-workspace').classList.add('hidden');
+  },
+
+  wrongWindowBtn() {
+    this.hintsCount++;
+    SFX.playHintTone();
+    this.showToast('💡', 'Hãy tìm nút X màu đỏ ở góc trên bên phải cửa sổ để đóng chương trình nhé!');
+    this.updateTeacherStats();
+  },
+
+  openAppWindow(appName) {
+    if (appName === 'browser' && !this.browserOpen) {
+      this.browserOpen = true;
+      document.getElementById('win-app-browser').classList.remove('hidden');
+    } else if (appName === 'rapid' && !this.rapidOpen) {
+      this.rapidOpen = true;
+      document.getElementById('win-app-rapid').classList.remove('hidden');
+    }
+  },
+
+  closeAppWindow(appName) {
+    if (appName === 'browser' && this.browserOpen) {
+      this.browserOpen = false;
+      document.getElementById('win-app-browser').classList.add('hidden');
+      document.getElementById('tb-icon-browser').classList.remove('active');
+      document.getElementById('mini-win-1').setAttribute('visible', 'false');
+      this.correctSteps++;
+      SFX.playTing();
+      this.showToast('✅', 'Tốt lắm! Em đã đóng chương trình Trình duyệt Web.');
+    } else if (appName === 'rapid' && this.rapidOpen) {
+      this.rapidOpen = false;
+      document.getElementById('win-app-rapid').classList.add('hidden');
+      document.getElementById('tb-icon-rapid').classList.remove('active');
+      document.getElementById('mini-win-2').setAttribute('visible', 'false');
+      this.correctSteps++;
+      SFX.playTing();
+      this.showToast('✅', 'Tốt lắm! Em đã đóng phần mềm luyện gõ bàn phím Rapid.');
+    }
+
+    // Kiểm tra nếu cả 2 chương trình đã đóng
+    if (!this.browserOpen && !this.rapidOpen) {
+      if (!this.isFreePractice) {
+        // Hiển thị bảng 4 bước tắt máy trực quan (Mục 8)
+        document.getElementById('btn-show-4steps').classList.remove('hidden');
+        document.getElementById('arrow-start-btn').classList.remove('hidden');
+        document.getElementById('win11-banner-title').innerText = '✅ ĐÃ ĐÓNG HẾT CHƯƠNG TRÌNH ĐANG MỞ!';
+        document.getElementById('win11-banner-desc').innerHTML =
+          '👉 <b>Bước 1 tiếp theo:</b> Nháy chuột vào nút <b>Start</b> ở góc dưới bên trái màn hình.';
+        this.open4StepsModal();
+      } else {
+        document.getElementById('win11-banner-title').innerText = '✅ ĐÃ ĐÓNG HẾT CHƯƠNG TRÌNH!';
+        document.getElementById('win11-banner-desc').innerHTML =
+          'Bây giờ em hãy tự thực hiện các bước tiếp theo trên thanh Taskbar để tắt máy nhé!';
+      }
+    }
+    this.updateTeacherStats();
+  },
+
+  clickStartButton() {
+    this.startMenuOpen = !this.startMenuOpen;
+    const menu = document.getElementById('win11-start-menu');
+    if (this.startMenuOpen) {
+      menu.classList.remove('hidden');
+      SFX.playTing();
+
+      if (!this.browserOpen && !this.rapidOpen) {
+        this.correctSteps++;
+        if (!this.isFreePractice) {
+          document.getElementById('arrow-start-btn').classList.add('hidden');
+          document.getElementById('arrow-power-btn').classList.remove('hidden');
+          document.getElementById('win11-banner-desc').innerHTML =
+            '👉 <b>Bước 2:</b> Nháy chuột vào biểu tượng <b>Power (⏻)</b> ở góc dưới bên phải bảng Start.';
+        }
+      }
+    } else {
+      menu.classList.add('hidden');
+      document.getElementById('power-popup-menu').classList.add('hidden');
+    }
+    this.updateTeacherStats();
+  },
+
+  clickPowerIcon() {
+    // MỤC 7: KIỂM TRA TRƯỚC KHI TẮT MÁY (NẾU VẪN CÒN CHƯƠNG TRÌNH ĐANG MỞ)
+    if (this.browserOpen || this.rapidOpen) {
+      this.hintsCount++;
+      SFX.playHintTone();
+      document.getElementById('win11-start-menu').classList.add('hidden');
+      this.startMenuOpen = false;
+      document.getElementById('unclosed-warning-modal').classList.remove('hidden');
+      SFX.speak('Em chưa đóng hết các chương trình đang mở. Hãy đóng các chương trình trước khi tắt máy để tránh mất dữ liệu.');
+      this.updateTeacherStats();
+      return;
+    }
+
+    this.powerPopupOpen = !this.powerPopupOpen;
+    const popup = document.getElementById('power-popup-menu');
+    if (this.powerPopupOpen) {
+      popup.classList.remove('hidden');
+      this.correctSteps++;
+      SFX.playTing();
+      if (!this.isFreePractice) {
+        document.getElementById('arrow-power-btn').classList.add('hidden');
+        document.getElementById('arrow-shutdown-btn').classList.remove('hidden');
+        document.getElementById('win11-banner-desc').innerHTML =
+          '👉 <b>Bước 3:</b> Nháy chuột chọn lệnh <b>Shut down</b>.';
+      }
+    } else {
+      popup.classList.add('hidden');
+    }
+    this.updateTeacherStats();
+  },
+
+  wrongPowerOption() {
+    this.hintsCount++;
+    SFX.playHintTone();
+    this.showToast('💡', 'Để tắt hẳn máy tính, em hãy chọn lệnh Shut down nhé!');
+    this.updateTeacherStats();
+  },
+
+  clickShutDownOption() {
+    if (this.browserOpen || this.rapidOpen) {
+      document.getElementById('unclosed-warning-modal').classList.remove('hidden');
+      return;
+    }
+
+    this.correctSteps++;
+    SFX.playTing();
+    document.getElementById('power-popup-menu').classList.add('hidden');
+    document.getElementById('win11-start-menu').classList.add('hidden');
+    document.getElementById('win11-shutting-down').classList.remove('hidden');
+    this.showToast('✅', 'Em đã chọn Shut down chính xác! Hãy đợi thân máy (CPU) tắt hẳn.');
+
+    // Sau 2.4 giây, thu nhỏ về bàn máy tính 3D để học sinh thấy đèn CPU tắt và tự bấm nút nguồn màn hình
+    setTimeout(() => {
+      this.closeWindows11Screen();
+      this.moveCamera('desk');
+
+      this.cpuPowerOn = false;
+      this.cpuShuttingDownComplete = true;
+      document.getElementById('cpu-btn-3d').setAttribute('color', '#E53935');
+      document.getElementById('cpu-led-3d').setAttribute('color', '#455A64');
+      document.getElementById('screen-3d-content').setAttribute('visible', 'false');
+
+      if (!this.isFreePractice) {
+        this.set3DHighlights({ sw: false, cpu: false, mon: true });
+      }
+
+      document.getElementById('guide-title').innerText = '👉 BƯỚC 4: TẮT CÔNG TẮC MÀN HÌNH';
+      document.getElementById('guide-message').innerHTML =
+        'Đèn trên thân máy (CPU) đã tắt hẳn! Bây giờ em hãy <b>nhấn nút nguồn ở góc dưới bên phải màn hình</b> để hoàn tất nhé.';
+      SFX.speak('Đèn trên thân máy đã tắt hẳn. Bây giờ em hãy tắt công tắc màn hình nhé.');
+    }, 2400);
+
+    this.updateTeacherStats();
+  },
+
+  // ==========================================================================
+  // KẾT THÚC & TRAO HUY HIỆU (MỤC 11)
+  // ==========================================================================
+  finishLesson() {
+    this.mode = 'completed';
+    const elapsedSec = this.startTime ? Math.max(10, Math.round((Date.now() - this.startTime) / 1000)) : 45;
+
+    document.getElementById('stat-correct').innerText = `${this.correctSteps} bước`;
+    document.getElementById('stat-hints').innerText = `${this.hintsCount} lần`;
+    document.getElementById('stat-time').innerText = `${elapsedSec} giây`;
+
+    document.getElementById('completion-modal').classList.remove('hidden');
+    SFX.playStartupChime();
+    SFX.speak('Chúc mừng em đã hoàn thành xuất sắc bài học và nhận được huy hiệu Bé sử dụng máy tính an toàn!');
+    this.saveProgress(elapsedSec);
+    this.updateTeacherStats();
+  },
+
+  // ==========================================================================
+  // TIỆN ÍCH GIAO DIỆN & PHẢN HỒI
+  // ==========================================================================
+  updateStepCards(currentStep) {
+    for (let i = 1; i <= 3; i++) {
+      const card = document.getElementById(`pon-step-${i}`);
+      card.classList.remove('active-step', 'done-step');
+      if (i < currentStep) card.classList.add('done-step');
+      else if (i === currentStep) card.classList.add('active-step');
+    }
+  },
+
+  set3DHighlights({ sw, cpu, mon }) {
+    document.getElementById('hl-switch').setAttribute('visible', sw);
+    document.getElementById('hl-cpu').setAttribute('visible', cpu);
+    document.getElementById('hl-monitor').setAttribute('visible', mon);
+  },
+
+  resetHardwareOff() {
+    this.hwSwitchOn = false;
+    this.cpuPowerOn = false;
+    this.monitorPowerOn = false;
+    this.cpuShuttingDownComplete = false;
+
+    document.getElementById('power-switch-3d').setAttribute('color', '#FF7043');
+    document.getElementById('cpu-btn-3d').setAttribute('color', '#E53935');
+    document.getElementById('cpu-led-3d').setAttribute('color', '#455A64');
+    document.getElementById('monitor-btn-3d').setAttribute('color', '#546E7A');
+    document.getElementById('monitor-led-3d').setAttribute('color', '#37474F');
+    document.getElementById('screen-3d-content').setAttribute('visible', 'false');
+  },
+
+  showToast(icon, text) {
+    const toast = document.getElementById('feedback-toast');
+    document.getElementById('toast-icon').innerText = icon;
+    document.getElementById('toast-text').innerText = text;
+    toast.classList.remove('hidden');
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => toast.classList.add('hidden'), 3200);
+  },
+
+  toggleSound() {
+    SFX.enabled = !SFX.enabled;
+    const icon = SFX.enabled ? '🔊' : '🔇';
+    document.getElementById('btn-sound-hud').innerText = icon;
+    document.querySelectorAll('.sound-icon').forEach(el => (el.innerText = icon));
+    this.showToast(icon, SFX.enabled ? 'Đã bật âm thanh' : 'Đã tắt âm thanh');
+  },
+
+  closeWarningModal() {
+    document.getElementById('unclosed-warning-modal').classList.add('hidden');
+  },
+
+  closeWarningModalAndHighlight() {
+    this.closeWarningModal();
+    document.getElementById('arrow-close-browser').classList.remove('hidden');
+    document.getElementById('arrow-close-rapid').classList.remove('hidden');
+  },
+
+  open4StepsModal() {
+    document.getElementById('four-steps-modal').classList.remove('hidden');
+  },
+
+  close4StepsModal() {
+    document.getElementById('four-steps-modal').classList.add('hidden');
+  },
+
+  speakFourSteps() {
+    SFX.speak(
+      'Tắt máy tính đúng cách gồm 4 bước: Bước 1: Đóng các chương trình đang mở, nháy chuột vào nút Start. Bước 2: Nháy chuột vào biểu tượng Power. Bước 3: Chọn lệnh Shut down. Bước 4: Đợi đèn trên thân máy tắt hẳn, sau đó tắt công tắc màn hình.'
+    );
+  },
+
+  openHelpModal() {
+    document.getElementById('help-modal').classList.remove('hidden');
+  },
+
+  closeHelpModal() {
+    document.getElementById('help-modal').classList.add('hidden');
+  },
+
+  openTeacherModal() {
+    this.updateTeacherStats();
+    document.getElementById('teacher-modal').classList.remove('hidden');
+  },
+
+  closeTeacherModal() {
+    document.getElementById('teacher-modal').classList.add('hidden');
+  },
+
+  closeAllModals() {
+    document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.add('hidden'));
+  },
+
+  returnToClassroom() {
+    this.closeAllModals();
+    this.closeWindows11Screen();
+    this.moveCamera('room');
+  },
+
+  restartAll() {
+    this.closeAllModals();
+    this.closeWindows11Screen();
+    this.correctSteps = 0;
+    this.hintsCount = 0;
+    this.startTime = Date.now();
+    this.startActivity1();
+  },
+
+  updateTeacherStats() {
+    const elapsed = this.startTime ? Math.round((Date.now() - this.startTime) / 1000) : 0;
+    document.getElementById('t-status').innerText =
+      this.mode === 'completed' ? '✅ Đã hoàn thành' : '⏳ Đang thực hành';
+    document.getElementById('t-correct').innerText = this.correctSteps;
+    document.getElementById('t-hints').innerText = this.hintsCount;
+    document.getElementById('t-time').innerText = `${elapsed} giây`;
+    document.getElementById('t-mode').innerText = this.isFreePractice ? 'Tự thực hành' : 'Có hướng dẫn';
+  },
+
+  saveProgress(elapsedSec) {
+    try {
+      localStorage.setItem(
+        'vr_tinhoc3_bai4',
+        JSON.stringify({
+          correctSteps: this.correctSteps,
+          hintsCount: this.hintsCount,
+          elapsedSec,
+          completedAt: new Date().toLocaleString('vi-VN')
+        })
+      );
+    } catch (e) {}
+  },
+
+  loadSavedProgress() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('vr_tinhoc3_bai4'));
+      if (saved) {
+        this.correctSteps = saved.correctSteps || 0;
+        this.hintsCount = saved.hintsCount || 0;
+      }
+    } catch (e) {}
+  }
+};
+
+window.addEventListener('DOMContentLoaded', () => App.init());

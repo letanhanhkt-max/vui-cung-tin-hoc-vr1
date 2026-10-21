@@ -1,0 +1,1027 @@
+/* ==========================================================================
+   THIẾT KẾ UX/UI DÀNH RIÊNG CHO HỌC SINH LỚP 3
+   Màu sắc tươi sáng, chữ lớn dễ đọc, bo góc mềm mại, không quảng cáo/xao nhãng
+   ========================================================================== */
+
+:root {
+  --primary: #0288D1;
+  --primary-hover: #039BE5;
+  --success: #2E7D32;
+  --success-light: #E8F5E9;
+  --warning: #F57C00;
+  --danger: #D32F2F;
+  --bg-soft: #F0F7FF;
+  --text-dark: #1E293B;
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-dark);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   1. MÀN HÌNH KHỞI ĐẦU & HỘP THOẠI MODAL
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.welcome-card, .dialog-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  max-width: 680px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+  border: 4px solid #81D4FA;
+  animation: popIn 0.35s ease-out;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.badge-grade {
+  display: inline-block;
+  background: #E1F5FE;
+  color: #0277BD;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 30px;
+  margin-bottom: 10px;
+}
+
+.main-title {
+  font-size: 32px;
+  color: #01579B;
+  margin: 4px 0;
+  font-weight: 900;
+}
+
+.sub-title {
+  font-size: 22px;
+  color: #F57C00;
+  margin: 4px 0 16px 0;
+}
+
+.welcome-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 14px 0;
+  background: #F8FAFC;
+  padding: 14px;
+  border-radius: var(--radius-md);
+}
+
+.illus-icon { font-size: 40px; }
+.illus-arrow { font-size: 24px; color: #94A3B8; font-weight: bold; }
+
+.welcome-desc {
+  font-size: 18px;
+  line-height: 1.5;
+  color: #334155;
+  background: #FFFDE7;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border-left: 5px solid #FBC02D;
+  margin-bottom: 20px;
+}
+
+.btn-primary-large {
+  background: linear-gradient(135deg, #2E7D32, #43A047);
+  color: white;
+  border: none;
+  padding: 16px 36px;
+  font-size: 21px;
+  font-weight: 800;
+  border-radius: 40px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(46, 125, 50, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary-large:hover {
+  transform: scale(1.04);
+  box-shadow: 0 8px 22px rgba(46, 125, 50, 0.5);
+}
+
+.welcome-Quick-bar {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-pill {
+  background: #F1F5F9;
+  color: #334155;
+  border: 2px solid #CBD5E1;
+  padding: 9px 18px;
+  border-radius: 25px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-pill:hover {
+  background: #E2E8F0;
+}
+
+/* ==========================================================================
+   2. THANH ĐIỀU HƯỚNG TRÊN CÙNG (TOP HUD)
+   ========================================================================== */
+#top-hud {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 10px 20px;
+  border-radius: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  border: 2px solid #B3E5FC;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hud-left, .hud-center, .hud-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-chip {
+  font-weight: 800;
+  color: #0277BD;
+  font-size: 16px;
+}
+
+.phase-badge {
+  background: #E8F5E9;
+  color: #2E7D32;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.btn-cam {
+  background: #E1F5FE;
+  color: #0277BD;
+  border: 2px solid transparent;
+  padding: 8px 16px;
+  border-radius: 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-cam:hover, .btn-cam.active {
+  background: #0288D1;
+  color: white;
+}
+
+.btn-icon {
+  background: #F1F5F9;
+  border: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.btn-icon:hover { background: #E2E8F0; }
+
+.btn-teacher {
+  background: #EDE7F6;
+  color: #5E35B1;
+  border: 2px solid #D1C4E9;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   3. BẢNG HƯỚNG DẪN BÊN DƯỚI (BOTTOM HUD)
+   ========================================================================== */
+#bottom-hud {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9000;
+  width: 94%;
+  max-width: 880px;
+}
+
+.guide-box {
+  background: rgba(255, 255, 255, 0.96);
+  border: 3px solid #4FC3F7;
+  border-radius: 22px;
+  padding: 16px 24px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.16);
+  text-align: center;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.activity-tag {
+  background: #FF9800;
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 14px;
+}
+
+#guide-title {
+  margin: 0;
+  font-size: 20px;
+  color: #01579B;
+}
+
+#guide-message {
+  margin: 6px 0 12px 0;
+  font-size: 17px;
+  color: #334155;
+  line-height: 1.45;
+}
+
+/* Thẻ 3 bước bật máy */
+.step-cards-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 10px 0 12px 0;
+}
+
+.mini-step-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F8FAFC;
+  border: 2px solid #E2E8F0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-align: left;
+  opacity: 0.65;
+  transition: 0.25s;
+}
+
+.mini-step-card.active-step {
+  opacity: 1;
+  background: #FFF9C4;
+  border-color: #FBC02D;
+  transform: scale(1.02);
+}
+
+.mini-step-card.done-step {
+  opacity: 1;
+  background: #E8F5E9;
+  border-color: #4CAF50;
+}
+
+.step-num {
+  background: #0288D1;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.step-text strong { display: block; font-size: 14px; color: #0F172A; }
+.step-text span { font-size: 13px; color: #475569; }
+
+.action-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  background: #0288D1;
+  color: white;
+  border: none;
+  padding: 11px 24px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-action:hover { background: #039BE5; transform: translateY(-2px); }
+
+.highlight-pulse {
+  animation: pulseBtn 1.5s infinite;
+}
+
+@keyframes pulseBtn {
+  0% { box-shadow: 0 0 0 0 rgba(2, 136, 209, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(2, 136, 209, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(2, 136, 209, 0); }
+}
+
+/* ==========================================================================
+   4. MÔ PHỎNG MÀN HÌNH WINDOWS 11 TƯƠNG TÁC
+   ========================================================================== */
+.win11-overlay {
+  position: fixed;
+  inset: 68px 20px 16px 20px;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monitor-bezel {
+  width: 100%;
+  max-width: 1020px;
+  height: 100%;
+  max-height: 620px;
+  background: #1E293B;
+  border-radius: 20px;
+  padding: 12px 14px 4px 14px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+  border: 4px solid #475569;
+}
+
+.monitor-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #E2E8F0;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 8px 8px 8px;
+}
+
+.monitor-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-pill {
+  background: #38BDF8;
+  color: #0F172A;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.btn-minimize-view {
+  background: #F59E0B;
+  color: #FFFFFF;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* Màn hình Desktop Windows 11 */
+.win11-desktop {
+  flex: 1;
+  background: linear-gradient(135deg, #38BDF8 0%, #0284C7 55%, #1E3A8A 100%);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Banner hướng dẫn trong màn hình */
+.win11-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: 92%;
+  background: rgba(255, 255, 255, 0.96);
+  border: 3px solid #FBC02D;
+  border-radius: 16px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.banner-icon { font-size: 28px; }
+.banner-content { flex: 1; text-align: left; }
+.banner-content strong { display: block; font-size: 16px; color: #B45309; }
+.banner-content span { font-size: 14.5px; color: #1E293B; }
+
+.btn-small-guide {
+  background: #0288D1;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Icons trên Desktop */
+.desktop-icons {
+  position: absolute;
+  top: 90px;
+  left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.d-icon {
+  width: 86px;
+  text-align: center;
+  color: white;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 10px;
+}
+.d-icon:hover { background: rgba(255,255,255,0.2); }
+.d-icon-img { font-size: 34px; margin-bottom: 4px; }
+.d-icon span { font-size: 12.5px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+
+/* Cửa sổ phần mềm (Trình duyệt & Rapid) */
+.app-window {
+  position: absolute;
+  width: 390px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  overflow: visible;
+  border: 2px solid #CBD5E1;
+  z-index: 15;
+}
+
+#win-app-browser { top: 92px; left: 125px; }
+#win-app-rapid { top: 135px; right: 45px; }
+
+.window-titlebar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px 10px 0 0;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.browser-bar { background: #0288D1; }
+.rapid-bar { background: #7B1FA2; }
+
+.win-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.win-btn {
+  width: 30px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+  position: relative;
+}
+
+.win-btn.close-x {
+  background: #E53935;
+}
+.win-btn.close-x:hover {
+  background: #B71C1C;
+  transform: scale(1.1);
+}
+
+/* Nhãn mũi tên chỉ dẫn nổi bật */
+.guide-arrow-badge {
+  position: absolute;
+  left: 36px;
+  top: 2px;
+  background: #FFEA00;
+  color: #D50000;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  animation: bounceLeft 0.7s infinite alternate;
+}
+
+@keyframes bounceLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(6px); }
+}
+
+.window-body { padding: 12px 16px; text-align: left; }
+.fake-url-bar {
+  background: #F1F5F9;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 8px;
+}
+.browser-content h4 { margin: 4px 0; color: #0277BD; }
+.browser-content p { font-size: 13px; margin: 4px 0 10px 0; }
+.browser-cards { display: flex; gap: 8px; }
+.b-card {
+  flex: 1;
+  background: #E1F5FE;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+}
+
+.rapid-body { text-align: center; }
+.typing-target {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+.key-box {
+  width: 38px;
+  height: 38px;
+  background: #F3E5F5;
+  border: 2px solid #8E24AA;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 18px;
+  color: #6A1B9A;
+}
+.typing-sub { font-size: 13px; color: #334155; margin: 6px 0; }
+.mini-keyboard {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 8px;
+}
+.mini-keyboard span {
+  padding: 5px 9px;
+  background: #E2E8F0;
+  border-radius: 5px;
+  font-weight: 700;
+  font-size: 12px;
+}
+.mini-keyboard span.home-key {
+  background: #FFE082;
+  border-bottom: 3px solid #F57C00;
+}
+
+/* Menu Start Windows 11 */
+.start-menu {
+  position: absolute;
+  bottom: 56px;
+  left: 16px;
+  width: 320px;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.35);
+  padding: 16px;
+  z-index: 40;
+  border: 2px solid #90CAF9;
+}
+
+.start-header {
+  font-size: 13px;
+  font-weight: 800;
+  color: #475569;
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+.start-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.s-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 24px;
+  padding: 8px;
+  background: #F8FAFC;
+  border-radius: 10px;
+}
+.s-item span { font-size: 11px; margin-top: 4px; color: #334155; font-weight: 700; }
+
+.start-footer {
+  border-top: 1px solid #E2E8F0;
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.power-wrapper { position: relative; }
+
+.power-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #CBD5E1;
+  background: #FFF;
+  font-size: 20px;
+  cursor: pointer;
+  position: relative;
+}
+.power-btn:hover { background: #FFEBEE; border-color: #E53935; }
+
+.power-popup {
+  position: absolute;
+  bottom: 50px;
+  right: 0;
+  width: 160px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  padding: 6px;
+  border: 2px solid #90CAF9;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.power-opt {
+  background: transparent;
+  border: none;
+  padding: 9px 12px;
+  text-align: left;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+}
+.power-opt:hover { background: #E3F2FD; }
+.shutdown-highlight { background: #FFEBEE; color: #C62828; }
+
+/* Nhãn mũi tên chỉ dẫn Bước 1, 2, 3 tắt máy */
+.guide-arrow-up {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  background: #FFEA00;
+  color: #D50000;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+.guide-arrow-left {
+  position: absolute;
+  right: 165px;
+  top: 6px;
+  background: #FFEA00;
+  color: #D50000;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+/* Thanh Taskbar Windows 11 */
+.win11-taskbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 35;
+}
+
+.taskbar-left-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.start-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #E1F5FE;
+  border: 2px solid #29B6F6;
+  padding: 5px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+  color: #01579B;
+  position: relative;
+}
+.start-btn:hover { background: #B3E5FC; }
+
+.tb-app-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  background: rgba(0,0,0,0.06);
+  cursor: pointer;
+}
+.tb-app-icon.active {
+  border-bottom: 3px solid #0288D1;
+  background: #E1F5FE;
+}
+
+.taskbar-systray {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Màn hình Shutting down */
+.shutting-down-screen {
+  position: absolute;
+  inset: 0;
+  background: #0F172A;
+  color: white;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid rgba(255,255,255,0.2);
+  border-top-color: #38BDF8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Viền dưới màn hình */
+.monitor-bottom-bezel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px 4px 14px;
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.bezel-power-btn {
+  background: #334155;
+  color: #E2E8F0;
+  border: 2px solid #64748B;
+  padding: 4px 14px;
+  border-radius: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.bezel-power-btn.on {
+  background: #2E7D32;
+  color: white;
+  border-color: #69F0AE;
+}
+
+/* ==========================================================================
+   5. HỘP THOẠI 4 BƯỚC, CẢNH BÁO, HOÀN THÀNH & GIÁO VIÊN
+   ========================================================================== */
+.dialog-icon { font-size: 52px; margin-bottom: 8px; }
+
+.dialog-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  background: #0288D1;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #E2E8F0;
+  color: #1E293B;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.steps-modal-card { max-width: 820px; }
+
+.visual-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.v-step-card {
+  background: #F8FAFC;
+  border: 2px solid #BAE6FD;
+  border-radius: 16px;
+  padding: 14px;
+  position: relative;
+  text-align: center;
+}
+
+.v-step-num {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  width: 30px;
+  height: 30px;
+  background: #0288D1;
+  color: white;
+  border-radius: 50%;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v-step-icon { font-size: 36px; margin-bottom: 4px; }
+.v-step-card h4 { margin: 4px 0; color: #01579B; font-size: 17px; }
+.v-step-card p { margin: 4px 0 0 0; font-size: 14.5px; color: #334155; }
+
+/* Huy hiệu hoàn thành */
+.confetti-header {
+  font-size: 30px;
+  font-weight: 900;
+  color: #2E7D32;
+}
+
+.badge-showcase {
+  background: linear-gradient(135deg, #FFFDE7, #FFF59D);
+  border: 3px solid #FBC02D;
+  border-radius: 20px;
+  padding: 18px;
+  margin: 16px 0;
+}
+
+.trophy-circle { font-size: 58px; }
+.badge-title { font-size: 13px; font-weight: 800; color: #F57F17; }
+.badge-name { font-size: 22px; font-weight: 900; color: #D84315; margin-top: 4px; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stat-item {
+  background: #F1F5F9;
+  padding: 12px;
+  border-radius: 12px;
+}
+.stat-label { display: block; font-size: 13px; color: #64748B; }
+.stat-val { font-size: 20px; color: #0F172A; }
+
+/* Toast phản hồi */
+.feedback-toast {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100001;
+  background: #1E293B;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 17px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+/* Chế độ giáo viên */
+.teacher-card { max-width: 780px; text-align: left; }
+.teacher-card h2 { text-align: center; color: #4527A0; }
+.t-section { margin-bottom: 14px; background: #F8FAFC; padding: 12px 16px; border-radius: 12px; }
+.t-section h4 { margin: 0 0 6px 0; color: #0277BD; }
+.t-section ul { margin: 4px 0; padding-left: 20px; }
+.teacher-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.teacher-table th, .teacher-table td {
+  border: 1px solid #CBD5E1;
+  padding: 8px 12px;
+  text-align: center;
+}
+.teacher-table th { background: #E2E8F0; }
+
+.help-list { text-align: left; line-height: 1.8; font-size: 16px; }
+
+@media (max-width: 768px) {
+  .step-cards-row, .visual-steps-grid, .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .app-window { width: 90%; left: 5% !important; right: auto !important; }
+}
