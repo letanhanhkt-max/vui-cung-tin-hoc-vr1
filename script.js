@@ -1,21 +1,82 @@
 /**
  * ============================================================================
- * HỆ THỐNG ĐIỀU KHIỂN PHÒNG HỌC TIN HỌC ẢO 360°
+ * HỆ THỐNG ĐIỀU KHIỂN PHÒNG HỌC TIN HỌC ẢO 360° & GIỌNG THẦY GIÁO ĐÀ NẴNG ẤM ÁP
  * Bài 4: Làm việc với máy tính (Bật và tắt máy tính đúng cách trong Windows 11)
- * Đã kiểm thử & tối ưu hóa:
- * - Bỏ bước bật nguồn điện (Trực tiếp Bật thân máy CPU -> Bật màn hình)
- * - Mở rộng vùng chạm 3D (Hitbox) + Nút thao tác nhanh siêu mượt
- * - Tự động căn chỉnh góc nhìn Camera chính diện máy tính
  * ============================================================================
  */
 
-class SoundSystem {
+class DaNangTeacherVoiceEngine {
   constructor() {
     this.enabled = true;
+    this.daNangWarmStyle = true; // true: Phong cách Thầy giáo Đà Nẵng ấm áp, thân thương
     this.ctx = null;
+    this.viVoice = null;
+    this.isMaleViVoice = false;
+    this.cloudAudio = null;
+    this.lastSpokenText = '';
+
+    this.initVoices();
   }
 
-  init() {
+  // Khởi tạo và lắng nghe danh sách giọng đọc tiếng Việt trên trình duyệt
+  initVoices() {
+    if (!('speechSynthesis' in window)) return;
+
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices() || [];
+      // Chỉ lọc các giọng đọc Tiếng Việt thật sự (Chặn tuyệt đối giọng Tiếng Anh đọc lơ lớ)
+      const viVoices = voices.filter(
+        v =>
+          v.lang.toLowerCase().includes('vi') ||
+          v.name.toLowerCase().includes('viet') ||
+          v.name.toLowerCase().includes('namminh') ||
+          v.name.toLowerCase().includes('hoaimy') ||
+          v.name.toLowerCase().includes(' microsoft an')
+      );
+
+      if (viVoices.length > 0) {
+        // Ưu tiên số 1: Giọng Nam Tiếng Việt tự nhiên (Microsoft NamMinh / Microsoft An / Male)
+        const maleVoice = viVoices.find(
+          v =>
+            v.name.toLowerCase().includes('namminh') ||
+            v.name.toLowerCase().includes(' an ') ||
+            v.name.toLowerCase().includes('male') ||
+            v.name.toLowerCase().includes('nam')
+        );
+
+        if (maleVoice) {
+          this.viVoice = maleVoice;
+          this.isMaleViVoice = true;
+        } else {
+          // Nếu máy chỉ có giọng Tiếng Việt chung, chọn và hạ trầm Pitch để tạo âm sắc ấm áp của Thầy giáo
+          this.viVoice = viVoices[0];
+          this.isMaleViVoice = false;
+        }
+      } else {
+        this.viVoice = null;
+      }
+
+      this.updateDiagnosticUI();
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  updateDiagnosticUI() {
+    const diagEl = document.getElementById('voice-diagnostic-info');
+    if (!diagEl) return;
+
+    if (this.viVoice) {
+      diagEl.innerHTML = `✅ Đã kích hoạt giọng Tiếng Việt bản địa: <b>${this.viVoice.name}</b> (${
+        this.isMaleViVoice ? 'Giọng Nam Thầy giáo chuẩn' : 'Đã tinh chỉnh âm trầm ấm Thầy giáo'
+      }) – Chế độ: <b>${this.daNangWarmStyle ? 'Thầy giáo Đà Nẵng ấm áp' : 'Tiếng Việt phổ thông'}</b>.`;
+    } else {
+      diagEl.innerHTML = `🌐 Thiết bị chưa cài gói giọng Tiếng Việt offline. Đã tự động bật <b>Luồng Giọng Đọc Tiếng Việt Đám Mây Ấm Áp</b> (Gợi ý: Mở bằng trình duyệt Microsoft Edge trên Windows 11 để có giọng Thầy NamMinh Neural siêu thực).`;
+    }
+  }
+
+  initAudioContext() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) this.ctx = new AudioCtx();
@@ -25,50 +86,106 @@ class SoundSystem {
     }
   }
 
-  // Âm thanh "Ting" khi thao tác đúng
+  // Chuyển hóa lời dẫn sang âm hưởng Thầy giáo Đà Nẵng ấm áp, nhẹ nhàng, khích lệ
+  localizeDaNangTeacherText(standardText, daNangText) {
+    return this.daNangWarmStyle && daNangText ? daNangText : standardText;
+  }
+
+  // Phát giọng nói Thầy giáo Tiếng Việt (Không bao giờ dùng giọng Tiếng Anh)
+  speak(standardText, daNangText = null) {
+    const textToSpeak = this.localizeDaNangTeacherText(standardText, daNangText);
+    this.lastSpokenText = textToSpeak;
+
+    if (!this.enabled) return;
+
+    // Dừng âm thanh đang đọc trước đó
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (this.cloudAudio) {
+      this.cloudAudio.pause();
+      this.cloudAudio = null;
+    }
+
+    // Tầng 1: Nếu thiết bị có sẵn giọng Tiếng Việt (vi-VN)
+    if (this.viVoice && 'speechSynthesis' in window) {
+      const utter = new SpeechSynthesisUtterance(textToSpeak);
+      utter.voice = this.viVoice;
+      utter.lang = 'vi-VN';
+
+      // Tinh chỉnh nhịp điệu chậm rãi, trầm ấm của người thầy Đà Nẵng
+      utter.rate = 0.92;
+      utter.pitch = this.isMaleViVoice ? 0.94 : 0.78; // Hạ pitch trầm ấm nếu là giọng trung tính
+      utter.volume = 1.0;
+
+      window.speechSynthesis.speak(utter);
+      return;
+    }
+
+    // Tầng 2: Nếu trình duyệt chỉ có giọng Tiếng Anh -> Chặn giọng Anh, dùng Cloud Tiếng Việt ấm áp
+    try {
+      const encoded = encodeURIComponent(textToSpeak);
+      const url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=vi&dt=t&q=${encoded}`;
+      this.cloudAudio = new Audio(url);
+      // Điều chỉnh tốc độ và độ trầm để tạo cảm giác giọng thầy giáo điềm đạm
+      this.cloudAudio.preservesPitch = false;
+      this.cloudAudio.mozPreservesPitch = false;
+      this.cloudAudio.webkitPreservesPitch = false;
+      this.cloudAudio.playbackRate = 0.91;
+      this.cloudAudio.play().catch(() => {});
+    } catch (e) {}
+  }
+
+  replayLast() {
+    if (this.lastSpokenText) {
+      this.speak(this.lastSpokenText, this.lastSpokenText);
+    }
+  }
+
+  // Âm thanh "Ting" dịu nhẹ khi học sinh thao tác đúng
   playTing() {
     if (!this.enabled) return;
-    this.init();
+    this.initAudioContext();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, now);
-    osc.frequency.setValueAtTime(880, now + 0.08);
-    gain.gain.setValueAtTime(0.22, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+    osc.frequency.setValueAtTime(523.25, now); // C5 ấm hơn
+    osc.frequency.setValueAtTime(783.99, now + 0.09); // G5
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.36);
+    osc.stop(now + 0.38);
   }
 
-  // Âm thanh gợi ý nhẹ nhàng khi chưa đúng thứ tự
+  // Âm thanh gợi ý nhẹ nhàng
   playHintTone() {
     if (!this.enabled) return;
-    this.init();
+    this.initAudioContext();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(340, now);
-    osc.frequency.linearRampToValueAtTime(280, now + 0.22);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(330, now);
+    osc.frequency.linearRampToValueAtTime(293.66, now + 0.22);
     gain.gain.setValueAtTime(0.14, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.24);
+    osc.stop(now + 0.25);
   }
 
-  // Âm thanh khởi động Windows 11 êm dịu
+  // Âm thanh khởi động Windows 11 êm ái
   playStartupChime() {
     if (!this.enabled) return;
-    this.init();
+    this.initAudioContext();
     if (!this.ctx) return;
 
     const chords = [261.63, 329.63, 392.00, 523.25];
@@ -76,7 +193,7 @@ class SoundSystem {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sine';
-      const start = this.ctx.currentTime + idx * 0.11;
+      const start = this.ctx.currentTime + idx * 0.12;
       osc.frequency.setValueAtTime(freq, start);
       gain.gain.setValueAtTime(0.15, start);
       gain.gain.exponentialRampToValueAtTime(0.001, start + 0.65);
@@ -86,37 +203,27 @@ class SoundSystem {
       osc.stop(start + 0.65);
     });
   }
-
-  // Giọng đọc hướng dẫn tiếng Việt
-  speak(text) {
-    if (!this.enabled || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'vi-VN';
-    utter.rate = 0.96;
-    window.speechSynthesis.speak(utter);
-  }
 }
 
-const SFX = new SoundSystem();
+const Voice = new DaNangTeacherVoiceEngine();
 
 const App = {
   // 'act1_poweron' | 'act2_shutdown_guided' | 'act3_free_practice' | 'completed'
   mode: 'act1_poweron',
   isFreePractice: false,
 
-  // Trạng thái phần cứng (Chỉ gồm CPU và Màn hình)
+  // Trạng thái phần cứng (CPU & Màn hình)
   cpuPowerOn: false,
   monitorPowerOn: false,
   cpuShuttingDownComplete: false,
 
-  // Trạng thái phần mềm trên Windows 11
+  // Trạng thái cửa sổ trên Windows 11
   browserOpen: true,
   rapidOpen: true,
   startMenuOpen: false,
   powerPopupOpen: false,
 
-  // Thống kê kết quả
+  // Thống kê học tập
   correctSteps: 0,
   hintsCount: 0,
   startTime: null,
@@ -135,7 +242,6 @@ const App = {
     const kb3d = document.getElementById('keyboard-3d');
     const mouse3d = document.getElementById('mouse-3d');
 
-    // Gắn sự kiện cho cả nút 3D và vùng đệm cảm ứng mở rộng (Hitbox)
     if (cpuBtn) cpuBtn.addEventListener('click', () => this.clickCpuPower());
     if (cpuHitbox) cpuHitbox.addEventListener('click', () => this.clickCpuPower());
     if (monBtn) monBtn.addEventListener('click', () => this.clickMonitorPower());
@@ -152,18 +258,26 @@ const App = {
     }
     if (kb3d) {
       kb3d.addEventListener('click', () => {
-        this.showToast('💡', 'Đây là Bàn phím. Em hãy tìm nút nguồn trên thân máy và màn hình nhé!');
+        this.showToast('💡', 'Đây là Bàn phím. Mình tìm nút nguồn trên thân máy và màn hình trước nghe!');
+        Voice.speak(
+          'Đây là bàn phím máy tính. Em hãy tìm nút nguồn trên thân máy trước nhé.',
+          'Đây là bàn phím máy tính đó em. Mình tìm nút nguồn trên thân máy để bật trước nghe!'
+        );
       });
     }
     if (mouse3d) {
       mouse3d.addEventListener('click', () => {
         this.showToast('💡', 'Đây là Chuột máy tính giúp em điều khiển con trỏ trên màn hình.');
+        Voice.speak(
+          'Đây là chuột máy tính giúp em điều khiển con trỏ trên màn hình.',
+          'Đây là con chuột máy tính giúp em điều khiển mũi tên trên màn hình đó nghe.'
+        );
       });
     }
   },
 
   // ==========================================================================
-  // ĐIỀU KHIỂN CAMERA VR & TỰ ĐỘNG CĂN CHÍNH DIỆN MÁY TÍNH
+  // ĐIỀU KHIỂN CAMERA VR MƯỢT MÀ
   // ==========================================================================
   resetCameraLook() {
     const camEl = document.getElementById('main-camera');
@@ -195,16 +309,49 @@ const App = {
     this.moveCamera('desk');
     if (part === 'cpu') {
       this.showToast('💡', 'Bước 1: Nhấn nút nguồn màu đỏ trên thân máy (CPU) ở bên trái màn hình.');
+      Voice.speak(
+        'Bước 1: Em hãy nhấn nút nguồn màu đỏ trên thân máy tính nhé.',
+        'Bước 1 nè: Em nhìn qua bên trái màn hình, nhấn vô nút nguồn màu đỏ trên thân máy nghe.'
+      );
     } else {
       this.showToast('💡', 'Bước 2: Nhấn nút nguồn ở góc dưới bên phải màn hình.');
+      Voice.speak(
+        'Bước 2: Em hãy nhấn nút nguồn của màn hình.',
+        'Bước 2 nè: Em nhấn nhẹ vô nút nguồn ở góc dưới bên phải màn hình nghe.'
+      );
     }
+  },
+
+  testTeacherVoice() {
+    Voice.initAudioContext();
+    Voice.speak(
+      'Thầy chào các em! Hôm nay thầy trò chúng mình cùng thực hành bật và tắt máy tính đúng cách trong Windows 11 nhé.',
+      'Thầy chào các em nghe! Hôm nay thầy trò mình tại Đà Nẵng cùng khám phá phòng học Tin học ảo, thực hành bật và tắt máy tính Windows 11 thật an toàn và đúng cách nghe!'
+    );
+    this.showToast('🎙️', 'Đang phát giọng hướng dẫn ấm áp của Thầy giáo...');
+  },
+
+  toggleDialectStyle() {
+    Voice.daNangWarmStyle = !Voice.daNangWarmStyle;
+    const btn = document.getElementById('btn-voice-style');
+    if (btn) {
+      btn.innerText = Voice.daNangWarmStyle
+        ? '🎙️ Giọng Thầy: Đà Nẵng ấm áp'
+        : '🎙️ Giọng Thầy: Phổ thông';
+    }
+    Voice.updateDiagnosticUI();
+    this.testTeacherVoice();
+  },
+
+  replayCurrentInstruction() {
+    Voice.replayLast();
   },
 
   // ==========================================================================
   // KHỞI ĐẦU & HOẠT ĐỘNG 1: BẬT MÁY TÍNH ĐÚNG CÁCH (2 BƯỚC)
   // ==========================================================================
   startExploration() {
-    SFX.init();
+    Voice.initAudioContext();
     document.getElementById('start-screen').classList.add('hidden');
     this.startTime = Date.now();
     this.startActivity1();
@@ -220,7 +367,7 @@ const App = {
     document.getElementById('activity-tag').innerText = 'HOẠT ĐỘNG 1';
     document.getElementById('guide-title').innerText = 'BẬT MÁY TÍNH ĐÚNG CÁCH';
     document.getElementById('guide-message').innerHTML =
-      '👉 <b>Bước 1:</b> Em hãy nhấn <b>nút nguồn trên thân máy (CPU)</b> để khởi động máy tính nhé!';
+      '👉 <b>Bước 1:</b> Em hãy nhấn vào <b>nút nguồn trên thân máy (CPU)</b> để khởi động máy tính nghe!';
 
     document.getElementById('power-on-steps').classList.remove('hidden');
     document.getElementById('btn-quick-cpu').classList.remove('hidden');
@@ -231,7 +378,11 @@ const App = {
 
     this.updateStepCards(1);
     this.set3DHighlights({ cpu: true, mon: false });
-    SFX.speak('Hoạt động 1: Bật máy tính đúng cách. Bước 1: Em hãy nhấn nút nguồn trên thân máy.');
+
+    Voice.speak(
+      'Hoạt động 1: Bật máy tính đúng cách. Bước 1: Em hãy nhấn nút nguồn trên thân máy tính nhé.',
+      'Thầy chào em nghe! Đầu tiên mình học cách bật máy tính đúng cách. Bước 1, em hãy nhấn vô nút nguồn màu đỏ trên thân máy tính nghe!'
+    );
   },
 
   // Bước 1: Nhấn nút nguồn trên thân máy (CPU)
@@ -242,8 +393,8 @@ const App = {
         document.getElementById('cpu-btn-3d').setAttribute('color', '#00E676');
         document.getElementById('cpu-led-3d').setAttribute('color', '#00E676');
         this.correctSteps++;
-        SFX.playTing();
-        this.showToast('✅', 'Chính xác! Thân máy (CPU) đã bật đèn báo sáng.');
+        Voice.playTing();
+        this.showToast('✅', 'Đúng rồi đó em! Đèn báo trên thân máy (CPU) đã sáng lên.');
 
         this.updateStepCards(2);
         this.set3DHighlights({ cpu: false, mon: true });
@@ -251,8 +402,12 @@ const App = {
         document.getElementById('btn-quick-monitor').classList.remove('hidden');
 
         document.getElementById('guide-message').innerHTML =
-          '👉 <b>Bước 2:</b> Em hãy nhấn <b>nút nguồn của màn hình</b> (ở góc dưới bên phải màn hình) nhé!';
-        SFX.speak('Bước 2: Nhấn nút nguồn của màn hình.');
+          '👉 <b>Bước 2:</b> Bây giờ em hãy nhấn <b>nút nguồn của màn hình</b> (ở góc dưới bên phải màn hình) nghe!';
+
+        Voice.speak(
+          'Tốt lắm! Thân máy đã bật. Bước 2: Em hãy nhấn nút nguồn của màn hình nhé.',
+          'Đúng rồi đó em, giỏi lắm! Đèn thân máy sáng rồi. Bước 2, em nhấn tiếp nút nguồn của màn hình ở góc dưới bên phải nghe!'
+        );
         this.updateTeacherStats();
       }
       return;
@@ -261,8 +416,12 @@ const App = {
     // Nếu đang ở Hoạt động tắt máy mà bấm nút nguồn CPU
     if (this.cpuPowerOn && !this.cpuShuttingDownComplete) {
       this.hintsCount++;
-      SFX.playHintTone();
-      this.showToast('💡', 'Không nên nhấn nút nguồn trên thân máy để tắt! Hãy tắt bằng lệnh Shut down trên Windows 11.');
+      Voice.playHintTone();
+      this.showToast('💡', 'Đừng nhấn nút nguồn trên thân máy để tắt nghe! Hãy tắt bằng lệnh Shut down trên màn hình.');
+      Voice.speak(
+        'Em không nên nhấn nút nguồn trên thân máy để tắt đột ngột. Hãy tắt trên màn hình Windows 11 nhé.',
+        'Khoan đã nghe em! Mình không nhấn nút nguồn trên thân máy để tắt đột ngột mô, dễ hư máy lắm. Em tắt trên màn hình Windows 11 nghe!'
+      );
       this.updateTeacherStats();
     }
   },
@@ -273,8 +432,12 @@ const App = {
     if (this.mode === 'act1_poweron') {
       if (!this.cpuPowerOn) {
         this.hintsCount++;
-        SFX.playHintTone();
-        this.showToast('💡', 'Hãy tìm nút nguồn trên thân máy tính (CPU) và nhấn trước nhé!');
+        Voice.playHintTone();
+        this.showToast('💡', 'Hãy tìm nút nguồn trên thân máy tính (CPU) và nhấn trước nghe!');
+        Voice.speak(
+          'Hãy tìm nút nguồn trên thân máy tính và nhấn trước nhé.',
+          'Em ơi, mình nhớ nhấn nút nguồn màu đỏ trên thân máy tính trước rồi mới bật màn hình nghe!'
+        );
         this.updateTeacherStats();
         return;
       }
@@ -286,7 +449,7 @@ const App = {
         document.getElementById('screen-3d-content').setAttribute('visible', 'true');
         this.correctSteps++;
 
-        SFX.playStartupChime();
+        Voice.playStartupChime();
         this.updateStepCards(3);
         this.set3DHighlights({ cpu: false, mon: false });
         document.getElementById('btn-quick-monitor').classList.add('hidden');
@@ -294,12 +457,15 @@ const App = {
         this.showToast('✅', 'Em đã bật máy tính đúng cách!');
         document.getElementById('guide-title').innerText = '✅ EM ĐÃ BẬT MÁY TÍNH ĐÚNG CÁCH!';
         document.getElementById('guide-message').innerHTML =
-          'Màn hình Windows 11 đã sáng lên! Hãy nhấn nút <b>"🛑 Hoạt động 2: Tắt máy tính đúng cách"</b> bên dưới để thực hành tiếp nhé.';
+          'Màn hình Windows 11 đã sáng lên rồi! Em hãy nhấn nút <b>"🛑 Hoạt động 2: Tắt máy tính đúng cách"</b> bên dưới để thực hành tiếp nghe.';
 
         document.getElementById('btn-act-win11').classList.remove('hidden');
         document.getElementById('btn-act-shutdown').classList.remove('hidden');
 
-        SFX.speak('Em đã bật máy tính đúng cách!');
+        Voice.speak(
+          'Chúc mừng! Em đã bật máy tính đúng cách. Bây giờ chúng mình chuyển sang Hoạt động 2: Tắt máy tính đúng cách nhé.',
+          'Tuyệt vời quá! Rứa là em đã bật máy tính đúng cách rồi đó. Bây giờ thầy trò mình qua Hoạt động 2: Tắt máy tính đúng cách nghe!'
+        );
         this.updateTeacherStats();
       }
       return;
@@ -309,8 +475,12 @@ const App = {
     if (this.mode === 'act2_shutdown_guided' || this.mode === 'act3_free_practice') {
       if (!this.cpuShuttingDownComplete) {
         this.hintsCount++;
-        SFX.playHintTone();
-        this.showToast('💡', 'Hãy đóng các chương trình và chọn Start → Power → Shut down trước khi tắt màn hình nhé!');
+        Voice.playHintTone();
+        this.showToast('💡', 'Hãy đóng các chương trình và chọn Start → Power → Shut down trước khi tắt màn hình nghe!');
+        Voice.speak(
+          'Em hãy đóng các chương trình và chọn lệnh Shut down trước khi tắt màn hình nhé.',
+          'Em nhớ đóng hết phần mềm rồi chọn Shut down trên màn hình trước, đợi đèn thân máy tắt hẳn rồi mới tắt màn hình nghe!'
+        );
         this.updateTeacherStats();
         return;
       }
@@ -322,15 +492,19 @@ const App = {
       document.getElementById('btn-quick-monitor').classList.add('hidden');
       this.set3DHighlights({ cpu: false, mon: false });
       this.correctSteps++;
-      SFX.playTing();
+      Voice.playTing();
 
       if (this.mode === 'act2_shutdown_guided') {
         this.showToast('🎉', 'Chính xác! Em đã hoàn thành 4 bước tắt máy tính đúng cách.');
         document.getElementById('guide-title').innerText = '🌟 ĐÃ TẮT MÁY TÍNH ĐÚNG CÁCH!';
         document.getElementById('guide-message').innerHTML =
-          'Em làm rất tốt! Bây giờ hãy nhấn vào <b>"🎮 Chế độ: Em tự thực hành"</b> để tự mình thao tác và nhận Huy hiệu nhé!';
+          'Em làm giỏi lắm đó! Bây giờ hãy nhấn vào <b>"🎮 Chế độ: Em tự thực hành"</b> để tự mình thao tác và nhận Huy hiệu nghe!';
         document.getElementById('btn-act-practice').classList.remove('hidden');
-        SFX.speak('Em làm rất tốt! Bây giờ hãy chuyển sang chế độ Em tự thực hành nhé.');
+
+        Voice.speak(
+          'Em làm rất tốt! Bây giờ hãy chuyển sang chế độ Em tự thực hành để nhận huy hiệu nhé.',
+          'Giỏi quá chừng luôn! Em đã nắm vững bốn bước tắt máy rồi đó. Giờ em bấm qua chế độ Em tự thực hành để nhận huy hiệu khen thưởng của thầy nghe!'
+        );
       } else {
         this.finishLesson();
       }
@@ -361,9 +535,12 @@ const App = {
 
     document.getElementById('win11-banner-title').innerText = '❓ TRƯỚC KHI TẮT MÁY, EM CẦN LÀM GÌ?';
     document.getElementById('win11-banner-desc').innerHTML =
-      'Trên màn hình đang mở <b>Trình duyệt Web</b> và <b>Rapid</b>. Em hãy tìm nút <b>✕</b> ở góc trên bên phải từng cửa sổ để đóng lại nhé!';
+      'Trên màn hình đang mở <b>Trình duyệt Web</b> và <b>Rapid</b>. Em hãy tìm nút <b>✕</b> ở góc trên bên phải từng cửa sổ để đóng lại nghe!';
 
-    SFX.speak('Trước khi tắt máy, em cần làm gì? Hãy tìm nút X ở góc trên bên phải mỗi cửa sổ để đóng chương trình.');
+    Voice.speak(
+      'Trước khi tắt máy, em cần làm gì? Hãy tìm nút X ở góc trên bên phải mỗi cửa sổ để đóng các chương trình đang mở nhé.',
+      'Trước khi tắt máy, đố em mình cần làm chi nào? À, trên màn hình đang mở Trình duyệt Web và phần mềm luyện gõ phím. Em nhấn vô dấu nhân màu đỏ ở góc trên bên phải để đóng cả hai cửa sổ lại nghe!'
+    );
   },
 
   // ==========================================================================
@@ -381,7 +558,6 @@ const App = {
     document.getElementById('btn-act-practice').classList.add('hidden');
     document.getElementById('mode-pill-win').innerText = '🎮 EM TỰ THỰC HÀNH';
 
-    // Ẩn toàn bộ mũi tên gợi ý
     document.getElementById('arrow-close-browser').classList.add('hidden');
     document.getElementById('arrow-close-rapid').classList.add('hidden');
     document.getElementById('arrow-start-btn').classList.add('hidden');
@@ -396,7 +572,10 @@ const App = {
     document.getElementById('win11-banner-desc').innerHTML =
       'Em hãy tự thực hiện đúng quy trình: <b>Đóng 2 chương trình ➔ Nhấn Start ➔ Chọn Power ➔ Chọn Shut down ➔ Tắt màn hình</b>.';
 
-    SFX.speak('Chế độ Em tự thực hành. Em hãy tự thực hiện lần lượt các bước để tắt máy tính đúng cách nhé.');
+    Voice.speak(
+      'Chế độ Em tự thực hành bắt đầu. Em hãy tự thực hiện lần lượt các bước để tắt máy tính đúng cách nhé.',
+      'Bây giờ tới phần Em tự thực hành, thầy không để sẵn mũi tên gợi ý nữa. Em tự tay đóng hai phần mềm rồi tắt máy tính đúng quy trình cho thầy xem nghe!'
+    );
     this.updateTeacherStats();
   },
 
@@ -449,8 +628,12 @@ const App = {
 
   wrongWindowBtn() {
     this.hintsCount++;
-    SFX.playHintTone();
+    Voice.playHintTone();
     this.showToast('💡', 'Hãy tìm nút X ở góc trên bên phải cửa sổ.');
+    Voice.speak(
+      'Hãy tìm nút X ở góc trên bên phải cửa sổ để đóng chương trình nhé.',
+      'Nút đó là thu nhỏ phóng to thôi em. Em nháy vô nút chữ X màu đỏ ở góc trên bên phải cửa sổ để đóng chương trình nghe!'
+    );
     this.updateTeacherStats();
   },
 
@@ -471,7 +654,7 @@ const App = {
       document.getElementById('tb-icon-browser').classList.remove('active');
       document.getElementById('mini-win-1').setAttribute('visible', 'false');
       this.correctSteps++;
-      SFX.playTing();
+      Voice.playTing();
       this.showToast('✅', 'Tốt lắm! Em đã đóng chương trình Trình duyệt Web.');
     } else if (appName === 'rapid' && this.rapidOpen) {
       this.rapidOpen = false;
@@ -479,10 +662,19 @@ const App = {
       document.getElementById('tb-icon-rapid').classList.remove('active');
       document.getElementById('mini-win-2').setAttribute('visible', 'false');
       this.correctSteps++;
-      SFX.playTing();
+      Voice.playTing();
       this.showToast('✅', 'Tốt lắm! Em đã đóng chương trình Rapid.');
     }
 
+    // Nếu mới đóng 1 cửa sổ, khích lệ đóng cửa sổ còn lại
+    if (this.browserOpen !== this.rapidOpen) {
+      Voice.speak(
+        'Tốt lắm! Em đã đóng được một chương trình. Hãy đóng tiếp chương trình còn lại nhé.',
+        'Giỏi lắm đó em! Mình đóng thêm cửa sổ phần mềm còn lại nữa là xong bước một nghe.'
+      );
+    }
+
+    // Khi đã đóng hết cả 2 chương trình
     if (!this.browserOpen && !this.rapidOpen) {
       if (!this.isFreePractice) {
         document.getElementById('btn-show-4steps').classList.remove('hidden');
@@ -491,10 +683,18 @@ const App = {
         document.getElementById('win11-banner-desc').innerHTML =
           '👉 <b>Bước 1:</b> Nháy chuột vào nút <b>Start</b> trên thanh Taskbar ở bên dưới màn hình.';
         this.open4StepsModal();
+        Voice.speak(
+          'Em đã đóng hết các chương trình đang mở. Hãy quan sát bảng 4 bước tắt máy tính đúng cách nhé.',
+          'Hay quá! Em đã đóng sạch các chương trình đang mở rồi. Giờ em xem kỹ bốn bước tắt máy tính trên bảng hướng dẫn của thầy nghe!'
+        );
       } else {
         document.getElementById('win11-banner-title').innerText = '✅ ĐÃ ĐÓNG HẾT CHƯƠNG TRÌNH!';
         document.getElementById('win11-banner-desc').innerHTML =
-          'Bây giờ em hãy nhấn <b>Start ➔ Power ➔ Shut down</b> nhé!';
+          'Bây giờ em hãy nhấn <b>Start ➔ Power ➔ Shut down</b> nghe!';
+        Voice.speak(
+          'Tốt lắm! Bây giờ em hãy nhấn nút Start, chọn Power và chọn Shut down nhé.',
+          'Đúng rồi đó em! Giờ em nhấn nút Start ở thanh bên dưới, chọn Power rồi bấm Shut down nghe!'
+        );
       }
     }
     this.updateTeacherStats();
@@ -507,7 +707,7 @@ const App = {
 
     if (this.startMenuOpen) {
       menu.classList.remove('hidden');
-      SFX.playTing();
+      Voice.playTing();
 
       if (!this.browserOpen && !this.rapidOpen) {
         this.correctSteps++;
@@ -516,6 +716,10 @@ const App = {
           document.getElementById('arrow-power-btn').classList.remove('hidden');
           document.getElementById('win11-banner-desc').innerHTML =
             '👉 <b>Bước 2:</b> Nháy chuột vào biểu tượng <b>Power (⏻)</b> ở góc dưới bên phải bảng Start.';
+          Voice.speak(
+            'Bước 2: Em hãy nháy chuột vào biểu tượng Power hình vòng tròn có gạch dọc nhé.',
+            'Chính xác! Qua bước 2, em nháy chuột vô biểu tượng nút nguồn Power ở góc dưới bên phải bảng Start nghe.'
+          );
         }
       }
     } else {
@@ -531,11 +735,15 @@ const App = {
     // KIỂM TRA TRƯỚC KHI TẮT MÁY: NẾU CÒN CHƯƠNG TRÌNH ĐANG MỞ
     if (this.browserOpen || this.rapidOpen) {
       this.hintsCount++;
-      SFX.playHintTone();
+      Voice.playHintTone();
       document.getElementById('win11-start-menu').classList.add('hidden');
       this.startMenuOpen = false;
       document.getElementById('unclosed-warning-modal').classList.remove('hidden');
-      SFX.speak('Em chưa đóng hết các chương trình đang mở. Hãy đóng các chương trình trước khi tắt máy để tránh mất dữ liệu.');
+
+      Voice.speak(
+        'Em chưa đóng hết các chương trình đang mở. Hãy đóng các chương trình trước khi tắt máy để tránh mất dữ liệu nhé.',
+        'Khoan tắt máy nghe em! Em còn chương trình đang mở trên màn hình kìa. Mình đóng hết các chương trình trước khi tắt máy để khỏi bị mất dữ liệu nghe!'
+      );
       this.updateTeacherStats();
       return;
     }
@@ -545,12 +753,16 @@ const App = {
     if (this.powerPopupOpen) {
       popup.classList.remove('hidden');
       this.correctSteps++;
-      SFX.playTing();
+      Voice.playTing();
       if (!this.isFreePractice) {
         document.getElementById('arrow-power-btn').classList.add('hidden');
         document.getElementById('arrow-shutdown-btn').classList.remove('hidden');
         document.getElementById('win11-banner-desc').innerHTML =
           '👉 <b>Bước 3:</b> Nháy chuột chọn lệnh <b>Shut down</b>.';
+        Voice.speak(
+          'Bước 3: Em hãy nháy chuột chọn lệnh Shut down.',
+          'Giỏi lắm! Bước 3 nè, em nháy chuột chọn dòng chữ Shut down để tắt máy nghe.'
+        );
       }
     } else {
       popup.classList.add('hidden');
@@ -560,8 +772,12 @@ const App = {
 
   wrongPowerOption() {
     this.hintsCount++;
-    SFX.playHintTone();
-    this.showToast('💡', 'Hãy quan sát lại hướng dẫn và chọn lệnh Shut down nhé!');
+    Voice.playHintTone();
+    this.showToast('💡', 'Hãy quan sát lại hướng dẫn và chọn lệnh Shut down nghe!');
+    Voice.speak(
+      'Hãy quan sát lại hướng dẫn và chọn lệnh Shut down để tắt máy tính nhé.',
+      'Để tắt hẳn máy tính thì mình chọn dòng lệnh Shut down ở giữa nghe em!'
+    );
     this.updateTeacherStats();
   },
 
@@ -572,13 +788,12 @@ const App = {
     }
 
     this.correctSteps++;
-    SFX.playTing();
+    Voice.playTing();
     document.getElementById('power-popup-menu').classList.add('hidden');
     document.getElementById('win11-start-menu').classList.add('hidden');
     document.getElementById('win11-shutting-down').classList.remove('hidden');
     this.showToast('✅', 'Chính xác! Hệ điều hành Windows 11 đang tắt.');
 
-    // Sau 2.2 giây: Đèn thân máy (CPU) tắt hẳn -> Chuyển về màn hình 3D để tắt nút nguồn màn hình
     setTimeout(() => {
       this.closeWindows11Screen();
       this.moveCamera('desk');
@@ -596,8 +811,12 @@ const App = {
 
       document.getElementById('guide-title').innerText = '👉 BƯỚC 4: TẮT CÔNG TẮC MÀN HÌNH';
       document.getElementById('guide-message').innerHTML =
-        'Đèn trên thân máy (CPU) đã tắt hẳn! Bây giờ em hãy <b>nhấn nút nguồn của màn hình</b> để hoàn tất nhé.';
-      SFX.speak('Đèn trên thân máy đã tắt hẳn, bây giờ em hãy tắt công tắc màn hình.');
+        'Đèn trên thân máy (CPU) đã tắt hẳn! Bây giờ em hãy <b>nhấn nút nguồn của màn hình</b> để hoàn tất nghe.';
+
+      Voice.speak(
+        'Đèn trên thân máy đã tắt hẳn, bây giờ em hãy nhấn nút nguồn để tắt màn hình nhé.',
+        'Em nhìn kìa, đèn trên thân máy đã tắt hẳn rồi đó. Bước cuối cùng, em nhấn nút nguồn để tắt màn hình nữa là xong nghe!'
+      );
     }, 2200);
 
     this.updateTeacherStats();
@@ -615,8 +834,12 @@ const App = {
     document.getElementById('stat-time').innerText = `${elapsedSec} giây`;
 
     document.getElementById('completion-modal').classList.remove('hidden');
-    SFX.playStartupChime();
-    SFX.speak('Hoàn thành! Em đã biết cách bật và tắt máy tính đúng cách và nhận được huy hiệu Bé sử dụng máy tính an toàn.');
+    Voice.playStartupChime();
+
+    Voice.speak(
+      'Hoàn thành! Em đã biết cách bật và tắt máy tính đúng cách. Thầy trao tặng em huy hiệu Bé sử dụng máy tính an toàn.',
+      'Xuất sắc quá em ơi! Em đã thực hành bật và tắt máy tính đúng chuẩn rồi đó. Thầy khen ngợi và trao tặng em huy hiệu Bé sử dụng máy tính an toàn nghe!'
+    );
     this.saveProgress(elapsedSec);
     this.updateTeacherStats();
   },
@@ -657,15 +880,15 @@ const App = {
     document.getElementById('toast-text').innerText = text;
     toast.classList.remove('hidden');
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => toast.classList.add('hidden'), 3000);
+    this.toastTimer = setTimeout(() => toast.classList.add('hidden'), 3200);
   },
 
   toggleSound() {
-    SFX.enabled = !SFX.enabled;
-    const icon = SFX.enabled ? '🔊' : '🔇';
+    Voice.enabled = !Voice.enabled;
+    const icon = Voice.enabled ? '🔊' : '🔇';
     document.getElementById('btn-sound-hud').innerText = icon;
     document.querySelectorAll('.sound-icon').forEach(el => (el.innerText = icon));
-    this.showToast(icon, SFX.enabled ? 'Đã bật âm thanh' : 'Đã tắt âm thanh');
+    this.showToast(icon, Voice.enabled ? 'Đã bật âm thanh & giọng Thầy giáo' : 'Đã tắt âm thanh');
   },
 
   closeWarningModal() {
@@ -687,8 +910,9 @@ const App = {
   },
 
   speakFourSteps() {
-    SFX.speak(
-      'Tắt máy tính đúng cách gồm 4 bước: Bước 1: Đóng các chương trình đang mở, nháy chuột vào nút Start. Bước 2: Nháy chuột vào biểu tượng Power. Bước 3: Nháy chuột chọn lệnh Shut down. Bước 4: Đợi đèn trên thân máy tắt hẳn, sau đó tắt công tắc màn hình.'
+    Voice.speak(
+      'Tắt máy tính đúng cách gồm 4 bước: Bước 1: Đóng các chương trình đang mở, nháy chuột vào nút Start. Bước 2: Nháy chuột vào biểu tượng Power. Bước 3: Nháy chuột chọn lệnh Shut down. Bước 4: Đợi đèn trên thân máy tắt hẳn, sau đó tắt công tắc màn hình.',
+      'Thầy đọc bốn bước tắt máy tính đúng cách để em dễ nhớ nghe: Bước 1, đóng hết các chương trình đang mở rồi nháy chuột vô nút Start. Bước 2, nháy chuột vô biểu tượng nút nguồn Power. Bước 3, chọn dòng lệnh Shut down. Và bước 4, đợi đèn trên thân máy tắt hẳn rồi mình mới tắt công tắc màn hình nghe!'
     );
   },
 
@@ -702,6 +926,7 @@ const App = {
 
   openTeacherModal() {
     this.updateTeacherStats();
+    Voice.updateDiagnosticUI();
     document.getElementById('teacher-modal').classList.remove('hidden');
   },
 
