@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Cho phép phát luồng giọng nói Tiếng Việt đám mây không bị chặn trên GitHub Pages -->
+  <meta name="referrer" content="no-referrer">
   <title>Phòng Học Tin Học Ảo 360° - Bài 4: Làm Việc Với Máy Tính</title>
   
-  <!-- Thư viện A-Frame WebXR 1.5.0 (Hỗ trợ cả VR và chế độ xoay 3D bằng chuột mượt mà) -->
+  <!-- Thư viện A-Frame WebXR 1.5.0 -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   
   <!-- Liên kết CSS -->
@@ -26,7 +28,7 @@
         <div class="teacher-avatar">👨‍🏫</div>
         <div class="teacher-bubble">
           <strong>Thầy giáo Tin học (Đà Nẵng):</strong>
-          <span>“Thầy chào em nghe! Hôm nay thầy trò mình cùng quan sát phòng máy 360° và thực hành bật, tắt máy tính trong Windows 11 thật đúng cách nhé!”</span>
+          <span>“Thầy chào em nghe! Hôm nay thầy trò mình cùng vào phòng học Tin học ảo, ngắm tranh hướng dẫn gõ phím trên tường và thực hành bật, tắt máy tính Windows 11 thật đúng cách nhé!”</span>
         </div>
       </div>
 
@@ -40,7 +42,7 @@
 
       <div class="welcome-quick-bar">
         <button class="btn-pill" onclick="App.testTeacherVoice()">
-          🎙️ Nghe thử giọng Thầy
+          🎙️ Nghe thử giọng Thầy Đà Nẵng
         </button>
         <button class="btn-pill" onclick="App.toggleSound()">
           <span class="sound-icon">🔊</span> Bật/tắt âm thanh
@@ -77,11 +79,14 @@
       <button class="btn-cam" id="cam-monitor" onclick="App.moveCamera('monitor')">
         🖥️ Màn hình
       </button>
+      <button class="btn-cam" id="cam-poster" onclick="App.moveCamera('poster')">
+        🖼️ Tranh tường
+      </button>
     </div>
 
     <div class="hud-right">
-      <button id="btn-voice-style" class="btn-voice-chip" onclick="App.toggleDialectStyle()" title="Đổi phong cách lời dẫn của Thầy giáo">
-        🎙️ Giọng Thầy: Đà Nẵng ấm áp
+      <button id="btn-voice-test-top" class="btn-voice-chip" onclick="App.replayCurrentInstruction()" title="Nghe lại lời thầy hướng dẫn">
+        🎙️ Nghe lời Thầy
       </button>
       <button id="btn-sound-hud" class="btn-icon" onclick="App.toggleSound()" title="Bật/tắt âm thanh">🔊</button>
       <button class="btn-icon" onclick="App.openHelpModal()" title="Hướng dẫn">❓</button>
@@ -98,8 +103,8 @@
       <div class="guide-header">
         <span id="activity-tag" class="activity-tag">HOẠT ĐỘNG 1</span>
         <h3 id="guide-title">BẬT MÁY TÍNH ĐÚNG CÁCH</h3>
-        <button class="btn-replay-voice" onclick="App.replayCurrentInstruction()" title="Nghe thầy đọc lại hướng dẫn">
-          🔊 Nghe thầy hướng dẫn
+        <button class="btn-replay-voice" onclick="App.replayCurrentInstruction()">
+          🔊 Nghe Thầy đọc lại
         </button>
       </div>
 
@@ -107,7 +112,7 @@
         👉 <b>Bước 1:</b> Em hãy nhấn vào <b>nút nguồn màu đỏ trên thân máy (CPU)</b> để khởi động máy tính nghe!
       </p>
 
-      <!-- Thẻ 2 bước Bật máy tính (Đã bỏ bước bật nguồn điện) -->
+      <!-- Thẻ 2 bước Bật máy tính (Không có bước bật nguồn điện) -->
       <div id="power-on-steps" class="step-cards-row">
         <div id="pon-step-1" class="mini-step-card active-step" onclick="App.focusHint('cpu')">
           <span class="step-num">1</span>
@@ -153,30 +158,53 @@
   </div>
 
   <!-- =================================================================
-       4. MÔ PHỎNG GIAO DIỆN WINDOWS 11 CHUẨN HIỆN ĐẠI
+       4. MÔ PHỎNG GIAO DIỆN WINDOWS 11 (CÓ HIỆU ỨNG BOOT & WELCOME)
        ================================================================= -->
   <div id="win11-workspace" class="win11-overlay hidden">
     <div class="monitor-bezel">
       <div class="monitor-top-bar">
         <span>🖥️ Màn hình máy tính – Hệ điều hành Windows 11</span>
         <div class="monitor-controls">
-          <span id="mode-pill-win" class="mode-pill">Chế độ hướng dẫn</span>
+          <span id="mode-pill-win" class="mode-pill">Windows 11</span>
           <button class="btn-minimize-view" onclick="App.closeWindows11Screen()">
             🔍 Thu nhỏ về phòng học 3D
           </button>
         </div>
       </div>
 
-      <!-- Không gian màn hình nền Windows 11 -->
+      <!-- Không gian màn hình Windows 11 -->
       <div id="win11-desktop" class="win11-desktop" onclick="App.handleDesktopClick(event)">
+
+        <!-- 4A. HIỆU ỨNG KHỞI ĐỘNG LOGO WINDOWS 11 (BOOT SCREEN) -->
+        <div id="win11-boot-screen" class="win11-boot-screen hidden">
+          <div class="win11-boot-logo">
+            <div class="sq"></div><div class="sq"></div>
+            <div class="sq"></div><div class="sq"></div>
+          </div>
+          <div class="boot-spinner"></div>
+          <p class="boot-text">Đang khởi động máy tính...</p>
+        </div>
+
+        <!-- 4B. HIỆU ỨNG MÀN HÌNH WELCOME WINDOWS 11 CHUYỂN VÀO DESKTOP -->
+        <div id="win11-welcome-screen" class="win11-welcome-screen hidden">
+          <div class="welcome-user-avatar">🧑‍💻</div>
+          <h2 class="welcome-user-name">Học sinh Tin học</h2>
+          <div class="welcome-status-row">
+            <div class="welcome-spinner"></div>
+            <span>Welcome / Xin chào...</span>
+          </div>
+        </div>
         
-        <!-- Thanh câu hỏi & chỉ dẫn của Thầy giáo trên màn hình -->
+        <!-- 4C. THANH CÂU HỎI & CHỈ DẪN TRÊN MÀN HÌNH DESKTOP -->
         <div id="win11-prompt-banner" class="win11-banner" onclick="event.stopPropagation()">
           <div class="banner-icon">👨‍🏫</div>
           <div class="banner-content">
-            <strong id="win11-banner-title">TRƯỚC KHI TẮT MÁY, EM CẦN LÀM GÌ?</strong>
-            <span id="win11-banner-desc">Em hãy đóng các chương trình đang mở bằng cách nháy chuột vào nút <b>✕</b> ở góc trên bên phải mỗi cửa sổ nghe!</span>
+            <strong id="win11-banner-title">MÁY TÍNH WINDOWS 11 ĐÃ SẴN SÀNG!</strong>
+            <span id="win11-banner-desc">Em có thể quan sát màn hình Desktop hoặc nhấn nút <b>"🛑 Bắt đầu học Tắt máy"</b> ở bên phải nghe!</span>
           </div>
+          <button id="btn-banner-start-act2" class="btn-small-guide" onclick="App.startActivity2()">
+            🛑 Bắt đầu học Tắt máy
+          </button>
           <button id="btn-show-4steps" class="btn-small-guide hidden" onclick="App.open4StepsModal()">
             📖 Xem 4 bước tắt máy
           </button>
@@ -191,6 +219,10 @@
           <div class="d-icon" onclick="App.openAppWindow('rapid')">
             <div class="d-icon-img">⌨️</div>
             <span>Rapid Luyện gõ</span>
+          </div>
+          <div class="d-icon" onclick="App.openPosterModal()">
+            <div class="d-icon-img">🖼️</div>
+            <span>Gõ phím 2 tay</span>
           </div>
           <div class="d-icon">
             <div class="d-icon-img">🗑️</div>
@@ -207,7 +239,7 @@
               <button class="win-btn" onclick="App.wrongWindowBtn()" title="Phóng to">☐</button>
               <button id="close-browser-btn" class="win-btn close-x" onclick="App.closeAppWindow('browser')" title="Đóng chương trình">
                 ✕
-                <span class="guide-arrow-badge" id="arrow-close-browser">⬅ Nhấn X để đóng</span>
+                <span class="guide-arrow-badge hidden" id="arrow-close-browser">⬅ Nhấn X để đóng</span>
               </button>
             </div>
           </div>
@@ -233,7 +265,7 @@
               <button class="win-btn" onclick="App.wrongWindowBtn()" title="Phóng to">☐</button>
               <button id="close-rapid-btn" class="win-btn close-x" onclick="App.closeAppWindow('rapid')" title="Đóng chương trình">
                 ✕
-                <span class="guide-arrow-badge" id="arrow-close-rapid">⬅ Nhấn X để đóng</span>
+                <span class="guide-arrow-badge hidden" id="arrow-close-rapid">⬅ Nhấn X để đóng</span>
               </button>
             </div>
           </div>
@@ -244,7 +276,7 @@
               <span class="key-box">D</span>
               <span class="key-box">K</span>
             </div>
-            <p class="typing-sub">Đặt hai ngón trỏ lên hai phím có gai F và J trên hàng phím cơ sở.</p>
+            <p class="typing-sub">Nhớ gõ phím bằng hai tay! Đặt hai ngón trỏ lên hai phím có gai F và J.</p>
             <div class="mini-keyboard">
               <span>A</span><span>S</span><span>D</span><span class="home-key">F</span>
               <span class="home-key">J</span><span>K</span><span>L</span><span>;</span>
@@ -259,9 +291,9 @@
           <div class="start-grid">
             <div class="s-item" onclick="App.openAppWindow('browser')">🌐<span>Trình duyệt</span></div>
             <div class="s-item" onclick="App.openAppWindow('rapid')">⌨️<span>RapidTyping</span></div>
+            <div class="s-item" onclick="App.openPosterModal()">🖼️<span>Gõ 2 tay</span></div>
             <div class="s-item">🎨<span>Paint</span></div>
             <div class="s-item">📝<span>WordPad</span></div>
-            <div class="s-item">🧮<span>Calculator</span></div>
             <div class="s-item">⚙️<span>Settings</span></div>
           </div>
           <div class="start-footer">
@@ -337,7 +369,27 @@
   </div>
 
   <!-- =================================================================
-       5. HỘP THOẠI CẢNH BÁO CHƯA ĐÓNG CHƯƠNG TRÌNH (MỤC 7)
+       5. HỘP THOẠI XEM CẬN CẢNH TRANH TƯỜNG "NHỚ GÕ PHÍM BẰNG HAI TAY"
+       ================================================================= -->
+  <div id="poster-modal" class="modal-backdrop hidden">
+    <div class="dialog-card poster-modal-card">
+      <h2>🖼️ TRANH TREO TƯỜNG PHÒNG TIN HỌC</h2>
+      <p class="modal-sub">“Nhớ gõ phím bằng hai tay bạn nhé!” – Đặt đúng các ngón tay theo màu sắc của phím.</p>
+      <div class="poster-preview-wrapper">
+        <img id="poster-modal-img" alt="Nhớ gõ phím bằng hai tay bạn nhé" />
+      </div>
+      <div class="dialog-actions">
+        <label class="btn-secondary" style="cursor:pointer;">
+          📂 Thay bằng file ảnh gốc từ máy tính
+          <input type="file" accept="image/*" style="display:none;" onchange="App.uploadCustomPoster(event)">
+        </label>
+        <button class="btn-primary" onclick="App.closePosterModal()">Đóng tranh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================================
+       6. HỘP THOẠI CẢNH BÁO CHƯA ĐÓNG CHƯƠNG TRÌNH (MỤC 7)
        ================================================================= -->
   <div id="unclosed-warning-modal" class="modal-backdrop hidden">
     <div class="dialog-card warning-card">
@@ -352,7 +404,7 @@
   </div>
 
   <!-- =================================================================
-       6. BẢNG HƯỚNG DẪN 4 BƯỚC TẮT MÁY TÍNH ĐÚNG CÁCH (MỤC 8)
+       7. BẢNG HƯỚNG DẪN 4 BƯỚC TẮT MÁY TÍNH ĐÚNG CÁCH (MỤC 8)
        ================================================================= -->
   <div id="four-steps-modal" class="modal-backdrop hidden">
     <div class="dialog-card steps-modal-card">
@@ -394,7 +446,7 @@
   </div>
 
   <!-- =================================================================
-       7. MÀN HÌNH HOÀN THÀNH & TRAO HUY HIỆU (MỤC 11)
+       8. MÀN HÌNH HOÀN THÀNH & TRAO HUY HIỆU (MỤC 11)
        ================================================================= -->
   <div id="completion-modal" class="modal-backdrop hidden">
     <div class="dialog-card completion-card">
@@ -430,16 +482,16 @@
   </div>
 
   <!-- =================================================================
-       8. HỘP THOẠI HƯỚNG DẪN SỬ DỤNG
+       9. HỘP THOẠI HƯỚNG DẪN SỬ DỤNG
        ================================================================= -->
   <div id="help-modal" class="modal-backdrop hidden">
     <div class="dialog-card">
       <h2>❓ HƯỚNG DẪN SỬ DỤNG PHÒNG HỌC ẢO</h2>
       <ul class="help-list">
-        <li>🖱️ <b>Quan sát 360°:</b> Nhấn giữ chuột trái và kéo để nhìn xung quanh phòng học Tin học.</li>
-        <li>👆 <b>Thao tác bật/tắt:</b> Nháy chuột vào nút nguồn trên thân máy (CPU) và màn hình 3D, hoặc nhấn nút hỗ trợ nhanh ở bảng bên dưới.</li>
+        <li>🖱️ <b>Quan sát 360°:</b> Nhấn giữ chuột trái và kéo để nhìn xung quanh phòng học Tin học, ngắm tranh treo tường và cây xanh.</li>
+        <li>👆 <b>Thao tác bật/tắt:</b> Nháy chuột vào nút nguồn trên thân máy (CPU) và màn hình 3D, màn hình sẽ hiện hiệu ứng <b>Welcome Windows 11</b>.</li>
         <li>🪟 <b>Thực hành Windows 11:</b> Đóng cửa sổ phần mềm bằng nút <b>✕</b> trước khi nhấn <b>Start → Power → Shut down</b>.</li>
-        <li>🎙️ <b>Giọng Thầy giáo:</b> Bấm nút <i>"🔊 Nghe thầy hướng dẫn"</i> để nghe giọng đọc tiếng Việt ấm áp, nhẹ nhàng.</li>
+        <li>🎙️ <b>Giọng Thầy giáo Đà Nẵng:</b> Bấm nút <i>"🔊 Nghe Thầy đọc lại"</i> bất kỳ lúc nào để nghe hướng dẫn tiếng Việt ấm áp.</li>
       </ul>
       <div class="dialog-actions">
         <button class="btn-primary" onclick="App.closeHelpModal()">Đã hiểu</button>
@@ -448,28 +500,27 @@
   </div>
 
   <!-- =================================================================
-       9. CHẾ ĐỘ GIÁO VIÊN (MỤC 12)
+       10. CHẾ ĐỘ GIÁO VIÊN (MỤC 12)
        ================================================================= -->
   <div id="teacher-modal" class="modal-backdrop hidden">
     <div class="dialog-card teacher-card">
-      <h2>👩‍🏫 GÓC GIÁO VIÊN – QUẢN LÝ & TỔ CHỨC DẠY HỌC</h2>
+      <h2>👩‍🏫 GÓC GIÁO VIÊN – QUẢN LÝ & TÙY CHỈNH HỌC LIỆU</h2>
       
       <div class="teacher-tabs">
         <div class="t-section">
           <h4>1. Mục tiêu bài học (Bài 4: Làm việc với máy tính)</h4>
           <ul>
-            <li>Nhận biết các bộ phận cơ bản của máy tính để bàn: Thân máy (CPU), màn hình, bàn phím, chuột, loa.</li>
-            <li>Thực hiện đúng quy trình <b>Bật máy tính</b> (Bước 1: Nhấn nút nguồn thân máy ➔ Bước 2: Nhấn nút nguồn màn hình).</li>
+            <li>Thực hiện đúng quy trình <b>Bật máy tính</b> (Bước 1: Nhấn nút nguồn thân máy ➔ Bước 2: Nhấn nút nguồn màn hình ➔ Quan sát màn hình <i>Welcome Windows 11</i>).</li>
             <li>Thực hiện đúng quy trình <b>4 bước Tắt máy tính an toàn trong Windows 11</b> và rèn thói quen đóng hết phần mềm đang mở trước khi tắt máy.</li>
           </ul>
         </div>
 
         <div class="t-section">
-          <h4>2. Cấu hình Giọng đọc Thầy giáo Đà Nẵng (TTS Engine)</h4>
-          <p id="voice-diagnostic-info" class="voice-diag">Đang kiểm tra bộ giọng đọc Tiếng Việt trên thiết bị...</p>
+          <h4>2. Bộ phát Giọng nói Thầy giáo Đà Nẵng & Tranh treo tường</h4>
+          <p id="voice-diagnostic-info" class="voice-diag">Đang kiểm tra bộ giọng đọc Tiếng Việt...</p>
           <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap;">
-            <button class="btn-pill" onclick="App.testTeacherVoice()">🔊 Nghe thử giọng Thầy giáo</button>
-            <button class="btn-pill" onclick="App.toggleDialectStyle()">🎙️ Đổi phong cách lời dẫn (Đà Nẵng / Phổ thông)</button>
+            <button class="btn-pill" onclick="App.testTeacherVoice()">🔊 Nghe thử giọng Thầy Đà Nẵng</button>
+            <button class="btn-pill" onclick="App.openPosterModal()">🖼️ Xem / Thay ảnh Tranh tường "Nhớ gõ phím bằng hai tay"</button>
           </div>
         </div>
 
@@ -506,7 +557,7 @@
   </div>
 
   <!-- =================================================================
-       10. KHÔNG GIAN VR 360° PHÒNG HỌC TIN HỌC HIỆN ĐẠI (A-FRAME)
+       11. KHÔNG GIAN VR 360° PHÒNG HỌC TIN HỌC VIỆT NAM ĐẸP & SINH ĐỘNG
        ================================================================= -->
   <a-scene 
     id="vr-scene"
@@ -515,8 +566,15 @@
     renderer="antialias: true; colorManagement: true; powerPreference: high-performance"
     vr-mode-ui="enabled: true">
 
-    <!-- Ánh sáng tự nhiên dịu mắt -->
-    <a-entity light="type: ambient; color: #FFFDF9; intensity: 0.9"></a-entity>
+    <!-- TÀI NGUYÊN TRANH TƯỜNG & TEXTURE ĐỘNG -->
+    <a-assets>
+      <!-- Canvas tự động vẽ bức tranh "NHỚ GÕ PHÍM BẰNG HAI TAY BẠN NHÉ!" hoặc nạp từ poster.png -->
+      <canvas id="typing-poster-canvas" width="1024" height="680"></canvas>
+      <canvas id="slogan-banner-canvas" width="1024" height="180"></canvas>
+    </a-assets>
+
+    <!-- Ánh sáng tự nhiên ấm áp -->
+    <a-entity light="type: ambient; color: #FFFDF9; intensity: 0.92"></a-entity>
     <a-entity light="type: directional; color: #FFF8E1; intensity: 0.55" position="3 6 4"></a-entity>
 
     <!-- HỆ THỐNG CAMERA VR 360° -->
@@ -525,33 +583,108 @@
       </a-camera>
     </a-entity>
 
-    <!-- Bầu trời sáng dịu -->
+    <!-- Bầu trời xanh tươi sáng ngoài cửa sổ -->
     <a-sky color="#E1F5FE"></a-sky>
 
-    <!-- Sàn phòng học -->
-    <a-plane position="0 0 -1.5" rotation="-90 0 0" width="14" height="14" color="#CFD8DC"></a-plane>
-    <a-plane position="0 0.005 -1.35" rotation="-90 0 0" width="2.4" height="1.8" color="#B0BEC5"></a-plane>
+    <!-- Sàn phòng học lát gạch sáng & Thảm khu vực trung tâm -->
+    <a-plane position="0 0 -1.5" rotation="-90 0 0" width="14" height="14" color="#ECEFF1"></a-plane>
+    <a-plane position="0 0.005 -1.35" rotation="-90 0 0" width="2.5" height="1.9" color="#B0BEC5"></a-plane>
 
-    <!-- Trần và 4 bức tường phòng học -->
+    <!-- Trần phòng học và Hệ thống đèn LED âm trần hiện đại -->
     <a-plane position="0 3.8 -1.5" rotation="90 0 0" width="14" height="14" color="#FFFFFF"></a-plane>
+    <a-box position="-2.2 3.77 -2" width="1.2" height="0.04" depth="0.35" color="#E0F7FA" material="shader: flat"></a-box>
+    <a-box position="2.2 3.77 -2" width="1.2" height="0.04" depth="0.35" color="#E0F7FA" material="shader: flat"></a-box>
+    <a-box position="0 3.77 1.2" width="1.2" height="0.04" depth="0.35" color="#E0F7FA" material="shader: flat"></a-box>
+
+    <!-- 4 Bức tường phòng học phối màu kem & xanh ngọc dịu mắt -->
     <a-plane position="0 1.9 -6" width="14" height="3.8" color="#FFFDF7"></a-plane>
     <a-plane position="0 1.9 4.5" rotation="0 180 0" width="14" height="3.8" color="#FFFDF7"></a-plane>
     <a-plane position="-6.5 1.9 -1" rotation="0 90 0" width="11" height="3.8" color="#FFF8E7"></a-plane>
     <a-plane position="6.5 1.9 -1" rotation="0 -90 0" width="11" height="3.8" color="#FFF8E7"></a-plane>
 
-    <!-- Chân tường màu xanh ngọc dịu mắt -->
-    <a-plane position="0 0.45 -5.98" width="14" height="0.9" color="#B2DFDB"></a-plane>
-    <a-plane position="-6.48 0.45 -1" rotation="0 90 0" width="11" height="0.9" color="#B2DFDB"></a-plane>
-    <a-plane position="6.48 0.45 -1" rotation="0 -90 0" width="11" height="0.9" color="#B2DFDB"></a-plane>
+    <!-- Chân tường ốp màu xanh ngọc dịu mắt -->
+    <a-plane position="0 0.48 -5.98" width="14" height="0.96" color="#B2DFDB"></a-plane>
+    <a-plane position="0 0.48 4.48" rotation="0 180 0" width="14" height="0.96" color="#B2DFDB"></a-plane>
+    <a-plane position="-6.48 0.48 -1" rotation="0 90 0" width="11" height="0.96" color="#B2DFDB"></a-plane>
+    <a-plane position="6.48 0.48 -1" rotation="0 -90 0" width="11" height="0.96" color="#B2DFDB"></a-plane>
 
-    <!-- Cửa sổ ánh sáng tự nhiên -->
-    <a-plane position="-6.45 2.1 -2.5" rotation="0 90 0" width="2.4" height="1.5" color="#B3E5FC"></a-plane>
-    <a-plane position="-6.45 2.1 0.8" rotation="0 90 0" width="2.4" height="1.5" color="#B3E5FC"></a-plane>
+    <!-- ===============================================================
+         TRANG TRÍ PHÒNG HỌC: BẢNG LỚP, KHẨU HIỆU & TRANH TREO TƯỜNG
+         =============================================================== -->
+    <!-- Bảng xanh lớp học phía trước -->
+    <a-box position="0 2.05 -5.92" width="4.6" height="1.35" depth="0.06" color="#1B5E20"></a-box>
+    <a-box position="0 2.05 -5.94" width="4.76" height="1.48" depth="0.03" color="#8D6E63"></a-box>
 
-    <!-- BẢNG LỚP HỌC & BÀN GIÁO VIÊN Ở PHÍA TRƯỚC -->
-    <a-box position="0 2.2 -5.92" width="4.6" height="1.4" depth="0.06" color="#1B5E20"></a-box>
-    <a-box position="0 2.2 -5.94" width="4.75" height="1.52" depth="0.03" color="#BCAAA4"></a-box>
+    <!-- Khẩu hiệu "TIÊN HỌC LỄ - HẬU HỌC VĂN" phía trên bảng -->
+    <a-plane 
+      id="slogan-plane"
+      position="0 3.12 -5.92" 
+      width="4.2" height="0.48" 
+      material="src: #slogan-banner-canvas; shader: flat">
+    </a-plane>
 
+    <!-- BỨC TRANH 1 (TRÊN TƯỜNG PHÍA TRƯỚC - CẠNH BẢNG): "NHỚ GÕ PHÍM BẰNG HAI TAY BẠN NHÉ!" -->
+    <a-entity position="3.95 2.15 -5.90">
+      <!-- Khung gỗ treo tranh -->
+      <a-box width="2.28" height="1.56" depth="0.04" color="#5D4037"></a-box>
+      <a-plane 
+        id="wall-poster-front"
+        class="clickable"
+        position="0 0 0.025" 
+        width="2.16" height="1.44" 
+        material="src: #typing-poster-canvas; shader: flat">
+      </a-plane>
+    </a-entity>
+
+    <!-- BỨC TRANH 2 (LỚN TRÊN TƯỜNG BÊN PHẢI): "NHỚ GÕ PHÍM BẰNG HAI TAY BẠN NHÉ!" -->
+    <a-entity position="6.42 2.15 -1.35" rotation="0 -90 0">
+      <a-box width="2.76" height="1.88" depth="0.05" color="#4E342E"></a-box>
+      <a-plane 
+        id="wall-poster-right"
+        class="clickable"
+        position="0 0 0.03" 
+        width="2.62" height="1.74" 
+        material="src: #typing-poster-canvas; shader: flat">
+      </a-plane>
+    </a-entity>
+
+    <!-- Cửa sổ bên tường trái có khung gỗ và hàng cây xanh bên ngoài -->
+    <a-entity position="-6.44 2.15 -2.4" rotation="0 90 0">
+      <a-box width="2.5" height="1.6" depth="0.04" color="#8D6E63"></a-box>
+      <a-plane position="0 0 0.025" width="2.35" height="1.45" color="#B3E5FC" material="shader: flat"></a-plane>
+      <!-- Tán cây xanh ngoài cửa sổ -->
+      <a-circle position="-0.5 -0.3 0.03" radius="0.45" color="#66BB6A" material="shader: flat"></a-circle>
+      <a-circle position="0.4 -0.35 0.03" radius="0.5" color="#43A047" material="shader: flat"></a-circle>
+    </a-entity>
+
+    <a-entity position="-6.44 2.15 0.8" rotation="0 90 0">
+      <a-box width="2.5" height="1.6" depth="0.04" color="#8D6E63"></a-box>
+      <a-plane position="0 0 0.025" width="2.35" height="1.45" color="#B3E5FC" material="shader: flat"></a-plane>
+      <a-circle position="0 -0.3 0.03" radius="0.48" color="#4CAF50" material="shader: flat"></a-circle>
+    </a-entity>
+
+    <!-- Chậu cây xanh trang trí góc lớp học tạo không gian tươi mát -->
+    <a-entity position="-5.2 0 -5.1">
+      <a-cylinder position="0 0.25 0" radius="0.24" height="0.5" color="#D84315"></a-cylinder>
+      <a-sphere position="0 0.75 0" radius="0.42" color="#2E7D32"></a-sphere>
+      <a-sphere position="0.18 1.05 0.1" radius="0.32" color="#43A047"></a-sphere>
+    </a-entity>
+    <a-entity position="5.2 0 -5.1">
+      <a-cylinder position="0 0.25 0" radius="0.24" height="0.5" color="#D84315"></a-cylinder>
+      <a-sphere position="0 0.75 0" radius="0.42" color="#2E7D32"></a-sphere>
+      <a-sphere position="-0.18 1.05 0.1" radius="0.32" color="#43A047"></a-sphere>
+    </a-entity>
+
+    <!-- Tủ sách Tin học ở góc phòng -->
+    <a-entity position="5.6 0 2.2" rotation="0 -90 0">
+      <a-box position="0 0.9 0" width="1.5" height="1.8" depth="0.4" color="#8D6E63"></a-box>
+      <a-box position="-0.35 1.2 0.05" width="0.12" height="0.32" depth="0.3" color="#E53935"></a-box>
+      <a-box position="-0.20 1.2 0.05" width="0.12" height="0.32" depth="0.3" color="#1E88E5"></a-box>
+      <a-box position="-0.05 1.2 0.05" width="0.12" height="0.32" depth="0.3" color="#FDD835"></a-box>
+      <a-box position="0.15 1.2 0.05" width="0.12" height="0.32" depth="0.3" color="#43A047"></a-box>
+    </a-entity>
+
+    <!-- Bàn giáo viên ở phía trước -->
     <a-entity position="-1.9 0 -4.2">
       <a-box position="0 0.75 0" width="1.4" height="0.05" depth="0.7" color="#8D6E63"></a-box>
       <a-box position="0 0.37 0.3" width="1.35" height="0.72" depth="0.04" color="#6D4C41"></a-box>
@@ -596,7 +729,7 @@
           color="#E53935">
         </a-cylinder>
 
-        <!-- Vùng cảm ứng mở rộng (Hitbox) giúp học sinh nháy chuột dễ dàng -->
+        <!-- Vùng cảm ứng mở rộng (Hitbox) -->
         <a-sphere 
           id="cpu-hitbox"
           class="clickable"
