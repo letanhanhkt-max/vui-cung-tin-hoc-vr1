@@ -1,6 +1,5 @@
 /* ==========================================================================
-   GIAO DIỆN UX/UI TƯƠI SÁNG, DỊU MẮT, THÂN THIỆN VỚI HỌC SINH TIỂU HỌC
-   Mô phỏng chuẩn giao diện Windows 11 & Bảng hướng dẫn 
+   GIAO DIỆN UX/UI TƯƠI SÁNG, HIỆU ỨNG WELCOME WINDOWS 11 & TRANH TƯỜNG
    ========================================================================== */
 
 :root {
@@ -329,7 +328,6 @@ body, html {
   line-height: 1.45;
 }
 
-/* Thẻ 2 bước bật máy */
 .step-cards-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -413,7 +411,7 @@ body, html {
 }
 
 /* ==========================================================================
-   4. MÔ PHỎNG MÀN HÌNH WINDOWS 11 CHUẨN HIỆN ĐẠI
+   4. MÀN HÌNH WINDOWS 11 + HIỆU ỨNG BOOT & WELCOME CHUYỂN CẢNH
    ========================================================================== */
 .win11-overlay {
   position: fixed;
@@ -474,6 +472,94 @@ body, html {
   font-size: 13px;
 }
 
+/* Màn hình Boot Logo Windows 11 */
+.win11-boot-screen {
+  position: absolute;
+  inset: 0;
+  background: #000000;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #E2E8F0;
+}
+
+.win11-boot-logo {
+  display: grid;
+  grid-template-columns: repeat(2, 42px);
+  gap: 6px;
+  margin-bottom: 45px;
+}
+.win11-boot-logo .sq {
+  width: 42px;
+  height: 42px;
+  background: #00A8FF;
+  border-radius: 3px;
+}
+
+.boot-spinner, .welcome-spinner {
+  width: 34px;
+  height: 34px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.boot-text {
+  margin-top: 16px;
+  font-size: 15px;
+  color: #94A3B8;
+}
+
+/* Màn hình Welcome Windows 11 chuyển vào Desktop */
+.win11-welcome-screen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #004E92 0%, #0284C7 50%, #000428 100%);
+  z-index: 75;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  animation: fadeInWelcome 0.4s ease-out;
+}
+
+@keyframes fadeInWelcome {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.welcome-user-avatar {
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 3px solid rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-user-name {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+}
+
+.welcome-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
 /* Màn hình nền Windows 11 */
 .win11-desktop {
   flex: 1;
@@ -522,7 +608,7 @@ body, html {
   left: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .d-icon {
@@ -534,8 +620,8 @@ body, html {
   border-radius: 10px;
 }
 .d-icon:hover { background: rgba(255,255,255,0.18); }
-.d-icon-img { font-size: 34px; margin-bottom: 4px; }
-.d-icon span { font-size: 12.5px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+.d-icon-img { font-size: 32px; margin-bottom: 3px; }
+.d-icon span { font-size: 12px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 
 /* Cửa sổ ứng dụng Windows 11 */
 .app-window {
@@ -590,7 +676,6 @@ body, html {
   transform: scale(1.1);
 }
 
-/* Mũi tên chỉ dẫn nổi bật */
 .guide-arrow-badge {
   position: absolute;
   left: 38px;
@@ -789,7 +874,6 @@ body, html {
 .power-opt:hover { background: #E3F2FD; }
 .shutdown-highlight { background: #FFEBEE; color: #C62828; }
 
-/* Nhãn mũi tên chỉ dẫn Bước 1, 2, 3 */
 .guide-arrow-up {
   position: absolute;
   bottom: 50px;
@@ -908,7 +992,6 @@ body, html {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Viền dưới màn hình */
 .monitor-bottom-bezel {
   display: flex;
   justify-content: space-between;
@@ -935,12 +1018,26 @@ body, html {
 }
 
 /* ==========================================================================
-   5. HỘP THOẠI 4 BƯỚC, CẢNH BÁO, HOÀN THÀNH & GIÁO VIÊN
+   5. HỘP THOẠI XEM TRANH TƯỜNG & CÁC MODAL KHÁC
    ========================================================================== */
+.poster-modal-card { max-width: 780px; }
+.poster-preview-wrapper {
+  background: #F1F5F9;
+  padding: 10px;
+  border-radius: 14px;
+  border: 3px solid #8D6E63;
+}
+.poster-preview-wrapper img {
+  width: 100%;
+  max-height: 410px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
 .dialog-icon { font-size: 52px; margin-bottom: 8px; }
 
 .dialog-actions {
-  margin-top: 20px;
+  margin-top: 18px;
   display: flex;
   justify-content: center;
   gap: 12px;
@@ -1038,7 +1135,6 @@ body, html {
 .stat-label { display: block; font-size: 13px; color: #64748B; }
 .stat-val { font-size: 20px; color: #0F172A; }
 
-/* Toast phản hồi */
 .feedback-toast {
   position: fixed;
   top: 72px;
@@ -1057,7 +1153,6 @@ body, html {
   box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 
-/* Chế độ giáo viên */
 .teacher-card { max-width: 780px; text-align: left; }
 .teacher-card h2 { text-align: center; color: #4527A0; }
 .t-section { margin-bottom: 14px; background: #F8FAFC; padding: 12px 16px; border-radius: 12px; }
